@@ -1,14 +1,48 @@
 "use client";
 
+import { splitSentences } from "@/lib/speech";
+
 interface ChatMessageProps {
   role: "user" | "assistant" | "system";
   content: string;
   isStreaming?: boolean;
+  activeSubtitle?: string | null;
 }
 
-export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  isStreaming,
+  activeSubtitle,
+}: ChatMessageProps) {
   const isUser = role === "user";
   const isSystem = role === "system";
+  const showSubtitle = !isUser && !isSystem && !!activeSubtitle;
+  const active = activeSubtitle?.trim() || "";
+  let highlighted = false;
+
+  const sentences = splitSentences(content);
+  const body = showSubtitle
+    ? sentences.map((sentence, i) => {
+        const trimmed = sentence.trim();
+        const isActive =
+          !highlighted && (trimmed === active || trimmed.includes(active) || active.includes(trimmed));
+        if (isActive) highlighted = true;
+        return (
+          <span
+            key={i}
+            className={
+              isActive
+                ? "bg-rose-500/25 text-rose-100 rounded px-0.5"
+                : undefined
+            }
+          >
+            {sentence}
+            {i < sentences.length - 1 ? " " : ""}
+          </span>
+        );
+      })
+    : content;
 
   return (
     <div
@@ -23,7 +57,7 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
             : "bg-zinc-800 text-zinc-100 rounded-bl-md"
         }`}
       >
-        {content}
+        {body}
         {isStreaming && (
           <span className="inline-block w-2 h-4 ml-1 bg-rose-400 animate-pulse align-middle" />
         )}

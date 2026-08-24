@@ -11,6 +11,7 @@ import { generatePersona, GRADIENTS } from "@/lib/offline/persona";
 import { offlineCard } from "@/lib/offline/creation-fallback";
 import { CharacterCardSchema } from "@/types/character-card";
 import { cleanForSpeech } from "@/lib/tts";
+import { splitSentences, splitStreamBuffer } from "@/lib/speech";
 
 let failures = 0;
 
@@ -76,6 +77,26 @@ test("cleans stage directions and keeps dialogue for speech", () => {
     "There you are. Now we can start."
   );
   assert.equal(cleanForSpeech("Hello   [已停止] world! 😊"), "Hello world!");
+});
+
+test("splitSentences handles English and Chinese", () => {
+  assert.deepEqual(
+    splitSentences("Hello! How are you? I'm fine."),
+    ["Hello!", "How are you?", "I'm fine."]
+  );
+  assert.deepEqual(
+    splitSentences("你好！今天天气不错。我们聊聊吧。"),
+    ["你好！", "今天天气不错。", "我们聊聊吧。"]
+  );
+  assert.deepEqual(splitSentences("partial sentence"), ["partial sentence"]);
+});
+
+test("splitStreamBuffer keeps the trailing partial fragment", () => {
+  const { complete, rest } = splitStreamBuffer(
+    "Hello there. How are you? I'm doing"
+  );
+  assert.deepEqual(complete, ["Hello there.", "How are you?"]);
+  assert.equal(rest, " I'm doing");
 });
 
 if (failures > 0) {

@@ -61,3 +61,17 @@ export function cleanForSpeech(raw: string): string {
 export function isValidRate(rate: string): boolean {
   return /^[+-]?\d+%$/.test(rate);
 }
+
+/** Kokoro local voices use a 3-letter prefix per language family. */
+export const KOKORO_VOICE_PREFIXES = new Set([
+  "af_",
+  "am_",
+  "bf_",
+  "bm_",
+  "zf_",
+  "zm_",
+]);
+
+export function isValidKokoroVoice(voice: string): boolean {
+  return KOKORO_VOICE_PREFIXES.has(voice.slice(0, 3));
+}

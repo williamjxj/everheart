@@ -18,6 +18,7 @@ prisma/dev.db-journal
 
 # Runtime TTS cache
 .cache/
+.venv-tts/
 
 # OS / IDE
 .DS_Store

@@ -14,6 +14,7 @@
 - [x] **数据库迁移到 Supabase Postgres**（Prisma provider 切 postgresql，全部表 `eh_` 前缀）
 - [x] **角色肖像图**（8 个演示角色，ComfyUI 本地生成 + 微动短视频，`public/companions/`）
 - [x] **语音聊天**（edge-tts 按角色音色 en/zh + 语音输入 Web Speech + 语言切换）
+- [x] **语音升级**：流式逐句播报（边出字边说话）+ 气泡字幕高亮 + 本地 Kokoro 离线音色（无网可用，edge 自动兜底）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。
@@ -46,7 +47,7 @@
 ### P2 — 增长与扩展
 9. AppSumo / Gumroad 一次性链接
 10. 角色卡导出 PNG（SillyTavern 兼容）
-11. 语音升级（当前 edge-tts demo → XTTS / Kokoro 本地音色，或 ElevenLabs 高端音色）
+11. 语音再升级（当前 Kokoro/edge-tts → 需要时换 XTTS 克隆音色或 ElevenLabs 高端音色）
 12. 创作者市场（Phase 2）
 13. Tauri 桌面端
 

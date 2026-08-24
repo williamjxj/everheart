@@ -69,6 +69,20 @@ See `.env.example`.
    button (Web Speech API, Chrome/Edge), an EN/中文 toggle that switches both
    speech recognition and the reply voice, and a speaker toggle to mute.
    Requires `uvx` and internet access to Microsoft's TTS service.
+9. **Streaming speech + subtitles** – replies are spoken sentence-by-sentence
+   as they stream in (no waiting for the full reply), and the currently spoken
+   sentence is highlighted inside the bubble. **Offline voices**: a local
+   Kokoro TTS server (`scripts/tts_local_server.py`, EN + 中文) kicks in
+   automatically when the network path fails — install once with:
+
+   ```bash
+   python3 -m venv .venv-tts
+   .venv-tts/bin/pip install kokoro soundfile onnxruntime "misaki[zh]"
+   ```
+
+   The first local generation downloads the Kokoro-82M model (needs network
+   once); afterwards it works fully offline. Set `TTS_ENGINE=local` to prefer
+   local voices, or keep `auto` (edge first, local fallback).
 
 ### Roadmap Status
 

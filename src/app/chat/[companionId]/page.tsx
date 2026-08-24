@@ -9,6 +9,7 @@ import {
   CompanionSidebar,
   CompanionPreview,
 } from "@/components/chat/CompanionSidebar";
+import { splitStreamBuffer } from "@/lib/speech";
 
 interface Message {
   id: string;
@@ -22,7 +23,12 @@ interface CompanionData {
   card: any;
   isNsfw: boolean;
   portraitUrl?: string | null;
-  voice?: { en: string; zh: string; rate?: string };
+  voice?: {
+    en: string;
+    zh: string;
+    rate?: string;
+    local?: { en: string; zh: string };
+  };
 }
 
 // Demo seed companions (localStorage fallback when no DB yet)
@@ -32,7 +38,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Elena",
     isNsfw: false,
     portraitUrl: "/companions/elena/portrait.png",
-    voice: { en: "en-US-AriaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
+    voice: {
+      en: "en-US-AriaNeural",
+      zh: "zh-CN-XiaoxiaoNeural",
+      rate: "+0%",
+      local: { en: "af_heart", zh: "zf_xiaobei" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -60,7 +71,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Kai",
     isNsfw: false,
     portraitUrl: "/companions/kai/portrait.png",
-    voice: { en: "en-US-BrianNeural", zh: "zh-CN-YunjianNeural", rate: "+0%" },
+    voice: {
+      en: "en-US-BrianNeural",
+      zh: "zh-CN-YunjianNeural",
+      rate: "+0%",
+      local: { en: "am_michael", zh: "zm_yunjian" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -87,7 +103,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Lyra",
     isNsfw: true,
     portraitUrl: "/companions/lyra/portrait.png",
-    voice: { en: "en-US-AvaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
+    voice: {
+      en: "en-US-AvaNeural",
+      zh: "zh-CN-XiaoxiaoNeural",
+      rate: "+0%",
+      local: { en: "af_bella", zh: "zf_xiaobei" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -115,7 +136,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Mira",
     isNsfw: false,
     portraitUrl: "/companions/mira/portrait.png",
-    voice: { en: "en-US-JennyNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
+    voice: {
+      en: "en-US-JennyNeural",
+      zh: "zh-CN-XiaoxiaoNeural",
+      rate: "+0%",
+      local: { en: "af_nicole", zh: "zf_xiaobei" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -143,7 +169,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Dante",
     isNsfw: false,
     portraitUrl: "/companions/dante/portrait.png",
-    voice: { en: "en-US-ChristopherNeural", zh: "zh-CN-YunjianNeural", rate: "-5%" },
+    voice: {
+      en: "en-US-ChristopherNeural",
+      zh: "zh-CN-YunjianNeural",
+      rate: "-5%",
+      local: { en: "am_adam", zh: "zm_yunjian" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -171,7 +202,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Yuna",
     isNsfw: false,
     portraitUrl: "/companions/yuna/portrait.png",
-    voice: { en: "en-US-EmmaMultilingualNeural", zh: "zh-CN-XiaoyiNeural", rate: "+8%" },
+    voice: {
+      en: "en-US-EmmaMultilingualNeural",
+      zh: "zh-CN-XiaoyiNeural",
+      rate: "+8%",
+      local: { en: "af_sky", zh: "zf_xiaoni" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -199,7 +235,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Cassian",
     isNsfw: false,
     portraitUrl: "/companions/cassian/portrait.png",
-    voice: { en: "en-US-GuyNeural", zh: "zh-CN-YunjianNeural", rate: "-8%" },
+    voice: {
+      en: "en-US-GuyNeural",
+      zh: "zh-CN-YunjianNeural",
+      rate: "-8%",
+      local: { en: "am_fenrir", zh: "zm_yunjian" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -227,7 +268,12 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Nova",
     isNsfw: false,
     portraitUrl: "/companions/nova/portrait.png",
-    voice: { en: "en-US-EmmaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+5%" },
+    voice: {
+      en: "en-US-EmmaNeural",
+      zh: "zh-CN-XiaoxiaoNeural",
+      rate: "+5%",
+      local: { en: "af_sarah", zh: "zf_xiaobei" },
+    },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -315,35 +361,89 @@ export default function ChatPage() {
     inputLangRef.current = inputLang;
   }, [inputLang]);
 
-  /** Ask the companion to speak `text` (edge-tts via /api/tts). */
-  const speakReply = useCallback(
+  const speechQueueRef = useRef<{ text: string }[]>([]);
+  const speechBufferRef = useRef("");
+  const speechBusyRef = useRef(false);
+  const speechSessionRef = useRef(0);
+  const [activeSubtitle, setActiveSubtitle] = useState<string | null>(null);
+
+  /** Speak one sentence and resolve when playback finishes (or fails). */
+  const speakSentence = useCallback(
     async (text: string, c: CompanionData, lang: "en" | "zh") => {
-      if (!voiceEnabledRef.current || !text) return;
-      const voice =
-        c.voice?.[lang] ||
-        (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
+      if (!text) return;
+      const voice = c.voice?.[lang] || (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
       const rate = c.voice?.rate || "+0%";
+      const localVoice = c.voice?.local?.[lang] || "";
       try {
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice, rate }),
+          body: JSON.stringify({ text, voice, rate, localVoice, engine: "auto" }),
         });
         if (!res.ok) return;
         const blob = await res.blob();
         audioRef.current?.pause();
         const audio = new Audio(URL.createObjectURL(blob));
         audioRef.current = audio;
-        setSpeaking(true);
-        audio.onended = () => setSpeaking(false);
-        audio.onerror = () => setSpeaking(false);
-        await audio.play();
+        await new Promise<void>((resolve) => {
+          audio.onended = () => resolve();
+          audio.onerror = () => resolve();
+          audio.play().catch(() => resolve());
+        });
       } catch {
-        setSpeaking(false);
+        /* skip this sentence */
       }
     },
     []
   );
+
+  /** Play queued sentences sequentially; highlight the active subtitle. */
+  const pumpSpeech = useCallback(
+    async (c: CompanionData, lang: "en" | "zh") => {
+      if (!voiceEnabledRef.current || speechBusyRef.current) return;
+      const next = speechQueueRef.current.shift();
+      if (!next) return;
+      const session = speechSessionRef.current;
+      speechBusyRef.current = true;
+      setSpeaking(true);
+      setActiveSubtitle(next.text);
+      await speakSentence(next.text, c, lang);
+      if (session !== speechSessionRef.current) return; // reset happened
+      speechBusyRef.current = false;
+      if (speechQueueRef.current.length > 0) {
+        pumpSpeech(c, lang);
+      } else {
+        setActiveSubtitle(null);
+        setSpeaking(false);
+      }
+    },
+    [speakSentence]
+  );
+
+  /** Feed a streamed chunk; complete sentences are spoken immediately. */
+  const feedSpeechStream = useCallback(
+    (chunk: string, c: CompanionData, lang: "en" | "zh") => {
+      if (!voiceEnabledRef.current) return;
+      speechBufferRef.current += chunk;
+      const { complete, rest } = splitStreamBuffer(speechBufferRef.current);
+      speechBufferRef.current = rest;
+      if (complete.length > 0) {
+        speechQueueRef.current.push(...complete.map((text) => ({ text })));
+        pumpSpeech(c, lang);
+      }
+    },
+    [pumpSpeech]
+  );
+
+  /** Stop any pending speech (new message / user stops generation). */
+  const resetSpeech = useCallback(() => {
+    speechSessionRef.current += 1;
+    speechBufferRef.current = "";
+    speechQueueRef.current = [];
+    audioRef.current?.pause();
+    setActiveSubtitle(null);
+    setSpeaking(false);
+  }, []);
 
   // Load companions + current companion + history
   useEffect(() => {
@@ -375,7 +475,10 @@ export default function ChatPage() {
 
       // Greet with voice when the conversation is just the opening line.
       if (history.length === 1 && history[0].id === "opening") {
-        speakReply(found.card.first_mes, found, inputLangRef.current);
+        if (voiceEnabledRef.current) {
+          speechQueueRef.current.push({ text: found.card.first_mes });
+          pumpSpeech(found, inputLangRef.current);
+        }
       }
 
       // Load memory
@@ -412,6 +515,7 @@ export default function ChatPage() {
 
       setIsStreaming(true);
       setStreamingContent("");
+      resetSpeech();
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -452,6 +556,7 @@ export default function ChatPage() {
           const chunk = decoder.decode(value, { stream: true });
           full += chunk;
           setStreamingContent(full);
+          feedSpeechStream(chunk, companion, inputLangRef.current);
         }
 
         const assistantMsg: Message = {
@@ -464,7 +569,14 @@ export default function ChatPage() {
         setMessages(finalMessages);
         saveMessages(companionId, finalMessages);
         setStreamingContent("");
-        speakReply(full || assistantMsg.content, companion, inputLangRef.current);
+
+        // Flush any remaining partial sentence into the speech queue.
+        const rest = speechBufferRef.current.trim();
+        speechBufferRef.current = "";
+        if (rest) {
+          speechQueueRef.current.push({ text: rest });
+          pumpSpeech(companion, inputLangRef.current);
+        }
 
         // Fire-and-forget: could call a separate endpoint to extract facts later
       } catch (err: any) {
@@ -479,12 +591,13 @@ export default function ChatPage() {
         abortRef.current = null;
       }
     },
-    [companion, companionId, messages, facts, summary, isStreaming, ageOk, speakReply]
+    [companion, companionId, messages, facts, summary, isStreaming, ageOk, resetSpeech, feedSpeechStream, pumpSpeech]
   );
 
   function handleStop() {
     abortRef.current?.abort();
     setIsStreaming(false);
+    resetSpeech();
     if (streamingContent) {
       const assistantMsg: Message = {
         id: `a-${Date.now()}`,
@@ -497,6 +610,13 @@ export default function ChatPage() {
       setStreamingContent("");
     }
   }
+
+  // Stop speech when leaving the chat page.
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
 
   if (!companion) {
     return (
@@ -579,13 +699,19 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-3xl mx-auto">
             {messages.map((m) => (
-              <ChatMessage key={m.id} role={m.role} content={m.content} />
+              <ChatMessage
+                key={m.id}
+                role={m.role}
+                content={m.content}
+                activeSubtitle={activeSubtitle}
+              />
             ))}
             {isStreaming && streamingContent && (
               <ChatMessage
                 role="assistant"
                 content={streamingContent}
                 isStreaming
+                activeSubtitle={activeSubtitle}
               />
             )}
             {isStreaming && !streamingContent && (
