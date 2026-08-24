@@ -11,6 +11,8 @@ export default function CreatePage() {
   const [loading, setLoading] = useState(false);
   const [card, setCard] = useState<any>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
+  const [portraitLoading, setPortraitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
@@ -19,6 +21,7 @@ export default function CreatePage() {
     setError(null);
     setCard(null);
     setCreatedId(null);
+    setPortraitUrl(null);
 
     try {
       const res = await fetch("/api/create", {
@@ -50,9 +53,10 @@ export default function CreatePage() {
         localStorage.setItem("everheart_companions", JSON.stringify(list));
       } catch {}
 
-      // Persist the character in Supabase (dynamic chats stay in the browser).
+      // Persist the character in Supabase (dynamic chats stay in the browser),
+      // then generate a portrait with the local ComfyUI.
       try {
-        await fetch("/api/companions", {
+        const saved = await fetch("/api/companions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -63,6 +67,19 @@ export default function CreatePage() {
             portraitUrl: null,
           }),
         });
+        if (saved.ok) {
+          setPortraitLoading(true);
+          try {
+            const pr = await fetch(`/api/companions/${id}/portrait`, {
+              method: "POST",
+            });
+            const pdata = await pr.json();
+            if (pr.ok && pdata.portraitUrl) setPortraitUrl(pdata.portraitUrl);
+          } catch {
+            /* portrait optional — chat still works without it */
+          }
+          setPortraitLoading(false);
+        }
       } catch {}
 
       setCreatedId(id);
@@ -124,6 +141,18 @@ export default function CreatePage() {
       {card && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
           <h2 className="text-2xl font-semibold">{card.name}</h2>
+          {portraitUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={portraitUrl}
+              alt={card.name}
+              className="w-48 aspect-[2/3] object-cover rounded-xl border border-zinc-700"
+            />
+          ) : portraitLoading ? (
+            <p className="text-sm text-zinc-400">
+              🎨 正在生成肖像…（约 1 分钟，本地 ComfyUI）
+            </p>
+          ) : null}
           <p className="text-zinc-400 whitespace-pre-wrap">{card.description}</p>
           <div>
             <h3 className="text-sm text-zinc-500 uppercase tracking-wide mb-1">

@@ -92,6 +92,10 @@ See `.env.example`.
 11. **Portraits in the UI** – the home page showcases every companion with
     their generated portrait; the chat sidebar and header show the portrait,
     and hover plays the 3s Ken Burns video clip.
+12. **Auto portrait for created companions** – the create flow generates a
+    portrait with the local ComfyUI (`POST /api/companions/:id/portrait`,
+    reusing `scripts/comfyui/workflow-portrait.json`) and persists it to
+    `eh_companion.portraitUrl`; chat/home pick it up automatically.
 
 ### Roadmap Status
 

@@ -17,6 +17,7 @@
 - [x] **语音升级**：流式逐句播报（边出字边说话）+ 气泡字幕高亮 + 本地 Kokoro 离线音色（无网可用，edge 自动兜底）
 - [x] **角色入库**：8 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
 - [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频
+- [x] **新创建角色自动生成肖像**（`/api/companions/:id/portrait` + 创建页接入）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。
@@ -42,7 +43,7 @@
 
 ### P1 — 体验与变现
 5. Stripe 测试支付完整闭环（成功页 + 解锁 NSFW）
-6. 基础人像生成（fal / Replicate）
+6. 人像增强（当前本地 ComfyUI 生成 → 可选 fal / Replicate 云批量）
 7. 记忆真正写入 DB（`eh_memory_fact` + `eh_summary`）
 8. 简单 18+ 验证占位（先 checkbox，后接 Veriff/Stripe Identity）
 
