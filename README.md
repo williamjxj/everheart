@@ -58,6 +58,11 @@ See `.env.example`.
 5. **Card Import/Export** – V2/V3 JSON + PNG metadata support (basic)
 6. **18+ AgeGate** – NSFW companions are gated behind an age confirmation
    (demo; replace with real identity verification before production)
+7. **Character portraits** – 8 demo companions with locally generated
+   portraits (ComfyUI) in `public/companions/` (portrait + alternate + a 3s
+   Ken Burns video clip each). Regenerate with:
+   `node scripts/generate-companion-portraits.mjs` (requires ComfyUI on
+   http://127.0.0.1:8188; workflow + roster in `scripts/comfyui/`).
 
 ### Roadmap Status
 

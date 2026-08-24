@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "test": "node --import tsx scripts/unit-tests.ts",
+    "portraits": "node scripts/generate-companion-portraits.mjs",
     "pipeline:test": "tsx scripts/test-creation-pipeline.ts"
   },
   "dependencies": {

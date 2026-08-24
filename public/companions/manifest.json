@@ -1,0 +1,125 @@
+{
+  "generatedAt": "2026-08-24T18:06:18.009Z",
+  "comfyUrl": "http://127.0.0.1:8188",
+  "model": "majicmixRealistic_v7.safetensors",
+  "width": 512,
+  "height": 768,
+  "steps": 28,
+  "cfg": 7,
+  "sampler": "dpmpp_2m",
+  "scheduler": "karras",
+  "companions": {
+    "elena": {
+      "name": "Elena",
+      "seed": 20260824,
+      "shots": {
+        "portrait": {
+          "file": "elena/portrait.png",
+          "prompt": "Elena, a mysterious sorceress-librarian in her late twenties, long silver-white hair cascading past her shoulders, striking violet eyes, pale porcelain skin, elegant dark academia attire with a high-collared midnight-blue coat and silver crescent jewelry, portrait, looking at the viewer, calm enigmatic expression, soft violet magical glow, grand library shelves with ancient books softly blurred behind her, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "elena/alternate.png",
+          "prompt": "Elena, a mysterious sorceress-librarian in her late twenties, long silver-white hair cascading past her shoulders, striking violet eyes, pale porcelain skin, elegant dark academia attire with a high-collared midnight-blue coat and silver crescent jewelry, three-quarter view, gentle knowing smile, hand resting on an old leather-bound book, candlelight and floating dust motes in a grand library, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "kai": {
+      "name": "Kai",
+      "seed": 20260825,
+      "shots": {
+        "portrait": {
+          "file": "kai/portrait.png",
+          "prompt": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, portrait, looking at the viewer, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "kai/alternate.png",
+          "prompt": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "lyra": {
+      "name": "Lyra",
+      "seed": 20260826,
+      "shots": {
+        "portrait": {
+          "file": "lyra/portrait.png",
+          "prompt": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night, portrait, looking at the viewer with a slow confident smile, floor-to-ceiling windows with city light bokeh behind, glass of red wine in hand, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "lyra/alternate.png",
+          "prompt": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night, three-quarter view leaning against a window frame, city skyline at night, soft moody lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "mira": {
+      "name": "Mira",
+      "seed": 20260827,
+      "shots": {
+        "portrait": {
+          "file": "mira/portrait.png",
+          "prompt": "Mira, a Japanese-American chef in her early thirties, warm brown eyes, gentle smile, dark hair in a loose bun with a wooden chopstick, linen shirt under a rustic apron, portrait, looking at the viewer, golden-hour light in a cozy rustic kitchen, fresh herbs and copper pots softly blurred behind, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "mira/alternate.png",
+          "prompt": "Mira, a Japanese-American chef in her early thirties, warm brown eyes, gentle smile, dark hair in a loose bun with a wooden chopstick, linen shirt under a rustic apron, three-quarter view plating a dish with focused care, warm inviting kitchen, gentle steam rising, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "dante": {
+      "name": "Dante",
+      "seed": 20260828,
+      "shots": {
+        "portrait": {
+          "file": "dante/portrait.png",
+          "prompt": "Dante, an Italian art curator in his early thirties, dark wavy hair slicked back, short stubble, expressive dark eyes, navy blazer over a black turtleneck, portrait, looking at the viewer with a charming subtle smile, classical paintings and marble gallery softly blurred behind, warm gallery lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "dante/alternate.png",
+          "prompt": "Dante, an Italian art curator in his early thirties, dark wavy hair slicked back, short stubble, expressive dark eyes, navy blazer over a black turtleneck, three-quarter view studying a framed painting with arms crossed, gallery interior, dramatic soft light, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "yuna": {
+      "name": "Yuna",
+      "seed": 20260829,
+      "shots": {
+        "portrait": {
+          "file": "yuna/portrait.png",
+          "prompt": "Yuna, a Korean music producer in her mid twenties, sleek black bob with bangs, dark almond eyes, subtle rose lipstick, oversized black hoodie, studio headphones around her neck, portrait, looking at the viewer with a confident slight smirk, neon-lit recording studio with purple and blue glow behind, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "yuna/alternate.png",
+          "prompt": "Yuna, a Korean music producer in her mid twenties, sleek black bob with bangs, dark almond eyes, subtle rose lipstick, oversized black hoodie, studio headphones around her neck, three-quarter view adjusting a mixer fader, headphones on ears, colorful LED studio lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "cassian": {
+      "name": "Cassian",
+      "seed": 20260830,
+      "shots": {
+        "portrait": {
+          "file": "cassian/portrait.png",
+          "prompt": "Cassian, an astronomy professor in his early forties, salt-and-pepper hair, kind hazel eyes behind round glasses, tweed jacket over a wool sweater, portrait, looking at the viewer with a warm wise smile, observatory dome and starry night sky softly blurred behind, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "cassian/alternate.png",
+          "prompt": "Cassian, an astronomy professor in his early forties, salt-and-pepper hair, kind hazel eyes behind round glasses, tweed jacket over a wool sweater, three-quarter view looking through a telescope, deep blue night sky with faint Milky Way, cozy dim observatory, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    },
+    "nova": {
+      "name": "Nova",
+      "seed": 20260831,
+      "shots": {
+        "portrait": {
+          "file": "nova/portrait.png",
+          "prompt": "Nova, an outdoor adventure photographer in her late twenties, sun-streaked blonde hair in a long braid, freckles, bright blue eyes, olive technical jacket over a thermal top, portrait, looking at the viewer with a wide adventurous smile, mountain sunset with golden alpenglow behind, wind-touched hair, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        },
+        "alternate": {
+          "file": "nova/alternate.png",
+          "prompt": "Nova, an outdoor adventure photographer in her late twenties, sun-streaked blonde hair in a long braid, freckles, bright blue eyes, olive technical jacket over a thermal top, three-quarter view holding a camera with a big lens, standing on a rocky ridge at sunrise, dramatic mountain landscape, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+        }
+      }
+    }
+  }
+}

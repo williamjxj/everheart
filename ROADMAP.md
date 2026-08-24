@@ -12,6 +12,7 @@
 - [x] **离线兜底引擎**（合并自 codex-everheart）：无 key 也能聊天/创建
 - [x] **18+ AgeGate**（NSFW 伴侣进入前确认；正式版换身份验证）
 - [x] **数据库迁移到 Supabase Postgres**（Prisma provider 切 postgresql，全部表 `eh_` 前缀）
+- [x] **角色肖像图**（8 个演示角色，ComfyUI 本地生成 + 微动短视频，`public/companions/`）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。

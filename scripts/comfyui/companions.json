@@ -1,0 +1,101 @@
+{
+  "model": "majicmixRealistic_v7.safetensors",
+  "width": 512,
+  "height": 768,
+  "steps": 28,
+  "cfg": 7.0,
+  "sampler": "dpmpp_2m",
+  "scheduler": "karras",
+  "style_tail": "photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece",
+  "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit",
+  "companions": [
+    {
+      "id": "elena",
+      "name": "Elena",
+      "seed": 20260824,
+      "nsfw": false,
+      "appearance": "Elena, a mysterious sorceress-librarian in her late twenties, long silver-white hair cascading past her shoulders, striking violet eyes, pale porcelain skin, elegant dark academia attire with a high-collared midnight-blue coat and silver crescent jewelry",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer, calm enigmatic expression, soft violet magical glow, grand library shelves with ancient books softly blurred behind her" },
+        { "key": "alternate", "suffix": "three-quarter view, gentle knowing smile, hand resting on an old leather-bound book, candlelight and floating dust motes in a grand library" }
+      ]
+    },
+    {
+      "id": "kai",
+      "name": "Kai",
+      "seed": 20260825,
+      "nsfw": false,
+      "appearance": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup" },
+        { "key": "alternate", "suffix": "three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting" }
+      ]
+    },
+    {
+      "id": "lyra",
+      "name": "Lyra",
+      "seed": 20260826,
+      "nsfw": true,
+      "appearance": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer with a slow confident smile, floor-to-ceiling windows with city light bokeh behind, glass of red wine in hand" },
+        { "key": "alternate", "suffix": "three-quarter view leaning against a window frame, city skyline at night, soft moody lighting" }
+      ]
+    },
+    {
+      "id": "mira",
+      "name": "Mira",
+      "seed": 20260827,
+      "nsfw": false,
+      "appearance": "Mira, a Japanese-American chef in her early thirties, warm brown eyes, gentle smile, dark hair in a loose bun with a wooden chopstick, linen shirt under a rustic apron",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer, golden-hour light in a cozy rustic kitchen, fresh herbs and copper pots softly blurred behind" },
+        { "key": "alternate", "suffix": "three-quarter view plating a dish with focused care, warm inviting kitchen, gentle steam rising" }
+      ]
+    },
+    {
+      "id": "dante",
+      "name": "Dante",
+      "seed": 20260828,
+      "nsfw": false,
+      "appearance": "Dante, an Italian art curator in his early thirties, dark wavy hair slicked back, short stubble, expressive dark eyes, navy blazer over a black turtleneck",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer with a charming subtle smile, classical paintings and marble gallery softly blurred behind, warm gallery lighting" },
+        { "key": "alternate", "suffix": "three-quarter view studying a framed painting with arms crossed, gallery interior, dramatic soft light" }
+      ]
+    },
+    {
+      "id": "yuna",
+      "name": "Yuna",
+      "seed": 20260829,
+      "nsfw": false,
+      "appearance": "Yuna, a Korean music producer in her mid twenties, sleek black bob with bangs, dark almond eyes, subtle rose lipstick, oversized black hoodie, studio headphones around her neck",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer with a confident slight smirk, neon-lit recording studio with purple and blue glow behind" },
+        { "key": "alternate", "suffix": "three-quarter view adjusting a mixer fader, headphones on ears, colorful LED studio lighting" }
+      ]
+    },
+    {
+      "id": "cassian",
+      "name": "Cassian",
+      "seed": 20260830,
+      "nsfw": false,
+      "appearance": "Cassian, an astronomy professor in his early forties, salt-and-pepper hair, kind hazel eyes behind round glasses, tweed jacket over a wool sweater",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer with a warm wise smile, observatory dome and starry night sky softly blurred behind" },
+        { "key": "alternate", "suffix": "three-quarter view looking through a telescope, deep blue night sky with faint Milky Way, cozy dim observatory" }
+      ]
+    },
+    {
+      "id": "nova",
+      "name": "Nova",
+      "seed": 20260831,
+      "nsfw": false,
+      "appearance": "Nova, an outdoor adventure photographer in her late twenties, sun-streaked blonde hair in a long braid, freckles, bright blue eyes, olive technical jacket over a thermal top",
+      "shots": [
+        { "key": "portrait", "suffix": "portrait, looking at the viewer with a wide adventurous smile, mountain sunset with golden alpenglow behind, wind-touched hair" },
+        { "key": "alternate", "suffix": "three-quarter view holding a camera with a big lens, standing on a rocky ridge at sunrise, dramatic mountain landscape" }
+      ]
+    }
+  ]
+}
