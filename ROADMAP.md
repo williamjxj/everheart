@@ -11,6 +11,7 @@
 - [x] Stripe 一次性购买 + webhook 骨架
 - [x] **离线兜底引擎**（合并自 codex-everheart）：无 key 也能聊天/创建
 - [x] **18+ AgeGate**（NSFW 伴侣进入前确认；正式版换身份验证）
+- [x] **数据库迁移到 Supabase Postgres**（Prisma provider 切 postgresql，全部表 `eh_` 前缀）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。
@@ -24,11 +25,11 @@
 
 2. **Auth + 用户账号**  
    - Clerk 或 NextAuth  
-   - 把当前 localStorage 数据迁移到真正的 User / Companion 表
+   - 把当前 localStorage 数据写入 Supabase 的 `eh_user` / `eh_companion` 表
 
 3. **把创建出的角色写入 DB / localStorage**  
    - Create 页面生成后自动跳转聊天  
-   - 保存到 companions 列表
+   - 保存到 companions 列表（后续落 `eh_companion`）
 
 4. **额度 / 权限检查**  
    - 聊天前检查 credits 或 BYOK  
@@ -37,7 +38,7 @@
 ### P1 — 体验与变现
 5. Stripe 测试支付完整闭环（成功页 + 解锁 NSFW）
 6. 基础人像生成（fal / Replicate）
-7. 记忆真正写入 DB（facts + summary）
+7. 记忆真正写入 DB（`eh_memory_fact` + `eh_summary`）
 8. 简单 18+ 验证占位（先 checkbox，后接 Veriff/Stripe Identity）
 
 ### P2 — 增长与扩展
@@ -52,7 +53,7 @@
 1. `cd everheart && pnpm install`
 2. 配置 `DEEPSEEK_API_KEY`
 3. `pnpm dev`
-4. 打开 http://localhost:3000/chat  
+4. 打开 http://localhost:3000/chat（platform 下为 http://localhost:4904/chat）  
    或直接：
    - /chat/demo-elena  （神秘图书管理员）
    - /chat/demo-kai    （温暖咖啡师）

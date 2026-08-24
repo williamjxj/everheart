@@ -21,7 +21,7 @@ Next.js App Router
   └── pages (create, chat, pricing, success)
         │
         ▼
-SQLite (Prisma; Postgres + pgvector later)
+Supabase Postgres via Prisma (eh_* tables; pgvector later)
   users · companions · messages · memory_facts · summaries · ledger · entitlements
         │
 External
@@ -106,7 +106,8 @@ everheart/
 
 1. `cd everheart && pnpm install`
 2. Copy `.env.example` → `.env.local` and fill keys
-3. SQLite is configured via `DATABASE_URL="file:./dev.db"` (creates `prisma/dev.db`)
+3. Supabase Postgres is configured via `DATABASE_URL` (pooler 6543, runtime)
+   and `DIRECT_URL` (5432, migrations) — tables are created with the `eh_` prefix
 4. `pnpm prisma generate && pnpm prisma db push`
 5. `pnpm dev`
 6. Test pipeline: `DEEPSEEK_API_KEY=... pnpm pipeline:test`

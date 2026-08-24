@@ -16,7 +16,8 @@ Create or buy AI companions (chat, portrait, voice, long-term memory) for a one-
 ### Prerequisites
 - Node.js 20+
 - pnpm (recommended) or npm
-- SQLite (local file; no extra database install)
+- A Supabase project (Postgres). Tables use the `eh_` prefix and are created
+  via `pnpm prisma db push` — runtime uses the pooler URL, migrations use DIRECT_URL.
 - DeepSeek API key (for LLM)
 - Stripe account (test mode for payments)
 
@@ -26,13 +27,21 @@ Create or buy AI companions (chat, portrait, voice, long-term memory) for a one-
 cd everheart
 pnpm install
 cp .env.example .env.local
-# Fill in DEEPSEEK_API_KEY, STRIPE_SECRET_KEY, etc. (SQLite is already configured)
+# Fill in DATABASE_URL/DIRECT_URL (Supabase), DEEPSEEK_API_KEY, STRIPE_SECRET_KEY, etc.
 pnpm prisma generate
 pnpm prisma db push
 pnpm dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000 (under the platform supervisor: http://localhost:4904)
+
+### Database
+
+All tables live in Supabase Postgres with the `eh_` prefix (`eh_user`,
+`eh_companion`, `eh_message`, `eh_memory_fact`, `eh_summary`, `eh_entitlement`,
+`eh_ledger_entry`, `eh_character_card_template`). `DATABASE_URL` points at the
+transaction-mode pooler (6543) for runtime; `DIRECT_URL` (5432) is used by
+`prisma db push` for migrations.
 
 ### Environment Variables
 
