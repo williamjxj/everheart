@@ -50,6 +50,21 @@ export default function CreatePage() {
         localStorage.setItem("everheart_companions", JSON.stringify(list));
       } catch {}
 
+      // Persist the character in Supabase (dynamic chats stay in the browser).
+      try {
+        await fetch("/api/companions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            name: newCard.name,
+            card: newCard,
+            isNsfw: !!nsfw,
+            portraitUrl: null,
+          }),
+        });
+      } catch {}
+
       setCreatedId(id);
     } catch (err: any) {
       setError(err.message);

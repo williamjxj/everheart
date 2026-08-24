@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 export interface CompanionPreview {
@@ -16,6 +17,8 @@ interface CompanionSidebarProps {
 }
 
 export function CompanionSidebar({ companions, activeId }: CompanionSidebarProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
     <aside className="w-72 border-r border-zinc-800 bg-zinc-950 flex flex-col h-full">
       <div className="p-4 border-b border-zinc-800">
@@ -43,9 +46,21 @@ export function CompanionSidebar({ companions, activeId }: CompanionSidebarProps
                   ? "border-rose-500 bg-zinc-900/80"
                   : "border-transparent"
               }`}
+              onMouseEnter={() => setHoveredId(c.id)}
+              onMouseLeave={() => setHoveredId(null)}
             >
               <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg shrink-0 overflow-hidden">
-                {c.portraitUrl ? (
+                {hoveredId === c.id && c.portraitUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <video
+                    src={c.portraitUrl.replace(/\.png$/, ".mp4")}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : c.portraitUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={c.portraitUrl}

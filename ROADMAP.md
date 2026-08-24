@@ -15,6 +15,8 @@
 - [x] **角色肖像图**（8 个演示角色，ComfyUI 本地生成 + 微动短视频，`public/companions/`）
 - [x] **语音聊天**（edge-tts 按角色音色 en/zh + 语音输入 Web Speech + 语言切换）
 - [x] **语音升级**：流式逐句播报（边出字边说话）+ 气泡字幕高亮 + 本地 Kokoro 离线音色（无网可用，edge 自动兜底）
+- [x] **角色入库**：8 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
+- [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。
@@ -28,7 +30,7 @@
 
 2. **Auth + 用户账号**  
    - Clerk 或 NextAuth  
-   - 把当前 localStorage 数据写入 Supabase 的 `eh_user` / `eh_companion` 表
+   - 角色已入 `eh_companion`（demo 用户）；登录后把角色归属到真实用户
 
 3. **把创建出的角色写入 DB / localStorage**  
    - Create 页面生成后自动跳转聊天  

@@ -83,6 +83,15 @@ See `.env.example`.
    The first local generation downloads the Kokoro-82M model (needs network
    once); afterwards it works fully offline. Set `TTS_ENGINE=local` to prefer
    local voices, or keep `auto` (edge first, local fallback).
+10. **Characters in the database** – the roster is persisted to Supabase
+    `eh_companion` (via `/api/companions` and
+    `pnpm db:seed-companions`). The chat page loads characters from the DB and
+    falls back to the bundled roster offline. **Dynamic conversation data
+    (messages / memory) intentionally stays in the browser and is not
+    stored.** Created companions are also upserted to the DB.
+11. **Portraits in the UI** – the home page showcases every companion with
+    their generated portrait; the chat sidebar and header show the portrait,
+    and hover plays the 3s Ken Burns video clip.
 
 ### Roadmap Status
 
