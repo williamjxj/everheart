@@ -10,6 +10,7 @@ import { respond } from "@/lib/offline/brain";
 import { generatePersona, GRADIENTS } from "@/lib/offline/persona";
 import { offlineCard } from "@/lib/offline/creation-fallback";
 import { CharacterCardSchema } from "@/types/character-card";
+import { cleanForSpeech } from "@/lib/tts";
 
 let failures = 0;
 
@@ -65,6 +66,16 @@ test("builds a SillyTavern card that passes schema validation", () => {
   assert.ok(card.first_mes.length > 0);
   assert.ok(card.description.length > 0);
   assert.equal(card.everheart?.isNsfw, false);
+});
+
+console.log("tts helpers");
+test("cleans stage directions and keeps dialogue for speech", () => {
+  assert.equal(cleanForSpeech("*She smiles.* Hello there."), "Hello there.");
+  assert.equal(
+    cleanForSpeech('"There you are." takes a slow breath. "Now we can start."'),
+    "There you are. Now we can start."
+  );
+  assert.equal(cleanForSpeech("Hello   [已停止] world! 😊"), "Hello world!");
 });
 
 if (failures > 0) {

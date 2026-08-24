@@ -63,6 +63,12 @@ See `.env.example`.
    Ken Burns video clip each). Regenerate with:
    `node scripts/generate-companion-portraits.mjs` (requires ComfyUI on
    http://127.0.0.1:8188; workflow + roster in `scripts/comfyui/`).
+8. **Voice chat (EN / 中文)** – every companion speaks: `/api/tts` renders
+   replies with Microsoft neural voices via `uvx edge-tts` (per-companion
+   en/zh voice + rate, cached by content hash). The chat input has a mic
+   button (Web Speech API, Chrome/Edge), an EN/中文 toggle that switches both
+   speech recognition and the reply voice, and a speaker toggle to mute.
+   Requires `uvx` and internet access to Microsoft's TTS service.
 
 ### Roadmap Status
 

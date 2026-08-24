@@ -22,6 +22,7 @@ interface CompanionData {
   card: any;
   isNsfw: boolean;
   portraitUrl?: string | null;
+  voice?: { en: string; zh: string; rate?: string };
 }
 
 // Demo seed companions (localStorage fallback when no DB yet)
@@ -31,6 +32,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Elena",
     isNsfw: false,
     portraitUrl: "/companions/elena/portrait.png",
+    voice: { en: "en-US-AriaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -58,6 +60,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Kai",
     isNsfw: false,
     portraitUrl: "/companions/kai/portrait.png",
+    voice: { en: "en-US-BrianNeural", zh: "zh-CN-YunjianNeural", rate: "+0%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -84,6 +87,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Lyra",
     isNsfw: true,
     portraitUrl: "/companions/lyra/portrait.png",
+    voice: { en: "en-US-AvaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -111,6 +115,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Mira",
     isNsfw: false,
     portraitUrl: "/companions/mira/portrait.png",
+    voice: { en: "en-US-JennyNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -138,6 +143,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Dante",
     isNsfw: false,
     portraitUrl: "/companions/dante/portrait.png",
+    voice: { en: "en-US-ChristopherNeural", zh: "zh-CN-YunjianNeural", rate: "-5%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -165,6 +171,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Yuna",
     isNsfw: false,
     portraitUrl: "/companions/yuna/portrait.png",
+    voice: { en: "en-US-EmmaMultilingualNeural", zh: "zh-CN-XiaoyiNeural", rate: "+8%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -192,6 +199,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Cassian",
     isNsfw: false,
     portraitUrl: "/companions/cassian/portrait.png",
+    voice: { en: "en-US-GuyNeural", zh: "zh-CN-YunjianNeural", rate: "-8%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -219,6 +227,7 @@ const DEMO_COMPANIONS: CompanionData[] = [
     name: "Nova",
     isNsfw: false,
     portraitUrl: "/companions/nova/portrait.png",
+    voice: { en: "en-US-EmmaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+5%" },
     card: {
       spec: "chara_card_v2",
       spec_version: "2.0",
@@ -288,9 +297,53 @@ export default function ChatPage() {
   const [summary, setSummary] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [ageOk, setAgeOk] = useState(true);
+  const [inputLang, setInputLang] = useState<"en" | "zh">("en");
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [speaking, setSpeaking] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const voiceEnabledRef = useRef(voiceEnabled);
+  const inputLangRef = useRef(inputLang);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    inputLangRef.current = inputLang;
+  }, [inputLang]);
+
+  /** Ask the companion to speak `text` (edge-tts via /api/tts). */
+  const speakReply = useCallback(
+    async (text: string, c: CompanionData, lang: "en" | "zh") => {
+      if (!voiceEnabledRef.current || !text) return;
+      const voice =
+        c.voice?.[lang] ||
+        (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
+      const rate = c.voice?.rate || "+0%";
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice, rate }),
+        });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        audioRef.current?.pause();
+        const audio = new Audio(URL.createObjectURL(blob));
+        audioRef.current = audio;
+        setSpeaking(true);
+        audio.onended = () => setSpeaking(false);
+        audio.onerror = () => setSpeaking(false);
+        await audio.play();
+      } catch {
+        setSpeaking(false);
+      }
+    },
+    []
+  );
 
   // Load companions + current companion + history
   useEffect(() => {
@@ -319,6 +372,11 @@ export default function ChatPage() {
         saveMessages(companionId, history);
       }
       setMessages(history);
+
+      // Greet with voice when the conversation is just the opening line.
+      if (history.length === 1 && history[0].id === "opening") {
+        speakReply(found.card.first_mes, found, inputLangRef.current);
+      }
 
       // Load memory
       try {
@@ -406,6 +464,7 @@ export default function ChatPage() {
         setMessages(finalMessages);
         saveMessages(companionId, finalMessages);
         setStreamingContent("");
+        speakReply(full || assistantMsg.content, companion, inputLangRef.current);
 
         // Fire-and-forget: could call a separate endpoint to extract facts later
       } catch (err: any) {
@@ -420,7 +479,7 @@ export default function ChatPage() {
         abortRef.current = null;
       }
     },
-    [companion, companionId, messages, facts, summary, isStreaming, ageOk]
+    [companion, companionId, messages, facts, summary, isStreaming, ageOk, speakReply]
   );
 
   function handleStop() {
@@ -489,7 +548,9 @@ export default function ChatPage() {
             <div>
               <h1 className="font-semibold leading-tight">{companion.name}</h1>
               <p className="text-xs text-zinc-500">
-                {isStreaming ? (
+                {speaking ? (
+                  <span className="text-rose-400">🔊 正在说话…</span>
+                ) : isStreaming ? (
                   <span className="text-rose-400">正在输入…</span>
                 ) : (
                   "在线 · 流式对话"
@@ -559,6 +620,10 @@ export default function ChatPage() {
           onSend={sendMessage}
           disabled={isStreaming}
           placeholder={`和 ${companion.name} 说点什么…`}
+          lang={inputLang}
+          onLangChange={setInputLang}
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={() => setVoiceEnabled((v) => !v)}
         />
       </div>
     </div>
