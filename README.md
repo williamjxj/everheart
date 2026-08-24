@@ -68,7 +68,7 @@ See `.env.example`.
 ```
 Next.js (App Router) + TypeScript
 ├── API routes (create, chat, cards, entitlements)
-├── SQLite via Prisma (profiles, cards, memory, ledger; Postgres later)
+├── Supabase Postgres via Prisma (eh_* tables; pooler for runtime, direct for migrations)
 ├── DeepSeek (BYOK + bundled)
 ├── Redis / background jobs (optional for POC)
 └── Stripe Checkout (one-time)
