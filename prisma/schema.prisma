@@ -1,0 +1,118 @@
+// Everheart Prisma schema – MVP (SQLite now; switch provider to postgresql later)
+// Run: pnpm prisma generate && pnpm prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  clerkId           String?        @unique // or external auth id
+  email             String?        @unique
+  displayName       String?
+  isAdultVerified   Boolean        @default(false)
+  adultVerifiedAt   DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  entitlements      Entitlement[]
+  companions        Companion[]
+  messages          Message[]
+  ledgerEntries     LedgerEntry[]
+  openRouterKeyEnc  String?        // encrypted BYOK LLM key (DeepSeek; never store plain)
+}
+
+model Entitlement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier          String   // "starter" | "standard" | "creator"
+  source        String   // "stripe" | "gumroad" | "appsumo" | "manual"
+  stripeSession String?
+  activatedAt   DateTime @default(now())
+  expiresAt     DateTime? // null = lifetime
+  features      Json     // feature flags snapshot
+
+  @@index([userId])
+}
+
+model Companion {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  cardJson      Json     // full SillyTavern-compatible card
+  portraitUrl   String?
+  isNsfw        Boolean  @default(false)
+  isPublic      Boolean  @default(false) // for future marketplace
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages      Message[]
+  memories      MemoryFact[]
+
+  @@index([userId])
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  companionId   String
+  companion     Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          String   // "user" | "assistant" | "system"
+  content       String
+  tokenCount    Int?
+  createdAt     DateTime @default(now())
+
+  @@index([companionId, createdAt])
+}
+
+model MemoryFact {
+  id            String                      @id @default(cuid())
+  companionId   String
+  companion     Companion                   @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  fact          String
+  embedding     Bytes?   // SQLite stand-in; restore pgvector(1536) when switching to Postgres
+  importance    Float                       @default(0.5)
+  createdAt     DateTime                    @default(now())
+  lastAccessed  DateTime                    @default(now())
+
+  @@index([companionId])
+}
+
+model Summary {
+  id            String   @id @default(cuid())
+  companionId   String   @unique
+  content       String
+  messageCount  Int
+  updatedAt     DateTime @updatedAt
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String   // "credit_purchase" | "usage" | "license_bonus" | "refund"
+  amountTokens  Int      // positive = credit, negative = debit
+  description   String?
+  referenceId   String?  // stripe payment intent, etc.
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model CharacterCardTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  archetype   String?
+  cardJson    Json
+  isNsfw      Boolean  @default(false)
+  isSeeded    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
