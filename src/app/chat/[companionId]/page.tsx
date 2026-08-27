@@ -61,6 +61,7 @@ export default function ChatPage() {
 
   const [companions, setCompanions] = useState<CompanionData[]>([]);
   const [companion, setCompanion] = useState<CompanionData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -194,6 +195,7 @@ export default function ChatPage() {
       setCompanions(list);
       const found = list.find((c) => c.id === companionId) || null;
       setCompanion(found);
+      setLoading(false);
 
       if (found) {
         let ageConfirmed = true;
@@ -364,6 +366,44 @@ export default function ChatPage() {
       audioRef.current?.pause();
     };
   }, []);
+
+  if (loading) {
+    const known = DEMO_COMPANIONS.find((c) => c.id === companionId);
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+        <div className="text-center space-y-5">
+          <div className="w-20 h-20 mx-auto rounded-full bg-zinc-800 overflow-hidden ring-1 ring-zinc-700">
+            {known?.portraitUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={known.portraitUrl}
+                alt={known.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl">
+                {known?.name?.slice(0, 1) ?? "…"}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center">
+            <span className="inline-flex gap-1.5">
+              <span className="w-2.5 h-2.5 bg-rose-400 rounded-full animate-bounce" />
+              <span
+                className="w-2.5 h-2.5 bg-rose-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.15s" }}
+              />
+              <span
+                className="w-2.5 h-2.5 bg-rose-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.3s" }}
+              />
+            </span>
+          </div>
+          <p className="text-zinc-400">正在进入与 {known?.name ?? "伴侣"} 的聊天…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!companion) {
     return (

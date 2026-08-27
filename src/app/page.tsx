@@ -47,7 +47,7 @@ export default function HomePage() {
                 onMouseEnter={() => setHoveredId(c.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
-                <div className="aspect-[2/3] overflow-hidden bg-zinc-800">
+                <div className="relative aspect-[2/3] overflow-hidden bg-zinc-800">
                   {hoveredId === c.id && c.portraitUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <video
@@ -70,6 +70,45 @@ export default function HomePage() {
                       {c.name.slice(0, 1)}
                     </div>
                   )}
+
+                  {/* Hover overlay: companion introduction */}
+                  <div
+                    className={`pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-zinc-950/95 via-zinc-950/60 to-zinc-950/10 transition-opacity duration-200 ${
+                      hoveredId === c.id ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold">{c.name}</h3>
+                        {c.card?.everheart?.age != null && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800/80 text-zinc-300 rounded">
+                            {c.card.everheart.age}岁
+                          </span>
+                        )}
+                        {c.isNsfw && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-rose-900/60 text-rose-300 rounded">
+                            18+
+                          </span>
+                        )}
+                      </div>
+                      {c.card?.tags && c.card.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {c.card.tags.slice(0, 3).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-200 rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-zinc-200 mt-2 leading-relaxed line-clamp-3 sm:line-clamp-4">
+                        {c.card?.description ?? c.card?.personality ?? "一位等你来了解的 AI 伴侣。"}
+                      </p>
+                      <p className="text-[11px] text-rose-300 mt-2">点击开始聊天 →</p>
+                    </div>
+                  </div>
                 </div>
                 <div className="p-4">
                   <div className="flex items-center gap-2">

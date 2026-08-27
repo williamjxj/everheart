@@ -24,3 +24,4 @@ prisma/dev.db-journal
 .DS_Store
 .idea/
 .vscode/
+.vercel
