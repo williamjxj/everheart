@@ -1,0 +1,9 @@
+# Local-only: never upload these to Vercel
+node_modules/
+.next/
+.venv-tts/
+.cache/
+*.db
+*.db-journal
+tsconfig.tsbuildinfo
+.DS_Store
