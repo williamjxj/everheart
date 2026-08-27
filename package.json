@@ -14,6 +14,7 @@
     "db:seed-companions": "node --import tsx scripts/seed-companions-db.ts",
     "test": "node --import tsx scripts/unit-tests.ts",
     "portraits": "node scripts/generate-companion-portraits.mjs",
+    "screenshot:home": "node scripts/screenshot.mjs --target localhost",
     "pipeline:test": "tsx scripts/test-creation-pipeline.ts"
   },
   "dependencies": {
@@ -38,6 +39,7 @@
     "autoprefixer": "^10.4.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.0.0",
+    "playwright": "^1.62.1",
     "postcss": "^8.4.0",
     "prisma": "^6.19.3",
     "tailwindcss": "^3.4.0",

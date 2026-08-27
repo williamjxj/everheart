@@ -18,7 +18,7 @@ Next.js App Router
   ├── /api/create          → creation pipeline (DeepSeek)
   ├── /api/chat            → orchestration + streaming
   ├── /api/entitlements/*  → Stripe checkout + webhook
-  └── pages (create, chat, pricing, success)
+  └── pages (create, chat, pricing, success; homepage companion gallery)
         │
         ▼
 Supabase Postgres via Prisma (eh_* tables; pgvector later)
@@ -79,13 +79,17 @@ Webhook activates `Entitlement` + credits into `LedgerEntry`.
 
 ```
 everheart/
-├── README.md
+├── README.md                    # includes homepage screenshot
+├── screenshots/home.png         # recapture: pnpm screenshot:home
 ├── TECHNICAL_DESIGN.md
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
 ├── prisma/schema.prisma
-├── scripts/test-creation-pipeline.ts
+├── scripts/
+│   ├── test-creation-pipeline.ts
+│   ├── screenshot.mjs
+│   └── screenshot.config.mjs
 └── src/
     ├── app/
     │   ├── layout.tsx, page.tsx, globals.css

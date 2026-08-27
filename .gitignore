@@ -25,4 +25,5 @@ prisma/dev.db-journal
 .idea/
 .vscode/
 .vercel
-tsconfig.tsbuildinfo
+# Screenshots (keep home.png; ignore generated reports)
+screenshots/report.json

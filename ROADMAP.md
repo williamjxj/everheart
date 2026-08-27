@@ -6,7 +6,7 @@
 - [x] 角色创建 Pipeline（多阶段 LLM）
 - [x] Chat Orchestrator + 流式 API
 - [x] **完整流式聊天页面**（侧边栏 + 消息列表 + 实时流式输出 + 停止按钮）
-- [x] 3 个演示虚拟人物（Elena / Kai / Lyra）本地种子
+- [x] **8 个演示虚拟人物**（Elena / Kai / Lyra / Mira / Dante / Yuna / Cassian / Nova）本地种子 + 首页肖像墙
 - [x] localStorage 临时持久化（消息 + 伴侣列表）
 - [x] Stripe 一次性购买 + webhook 骨架
 - [x] **离线兜底引擎**（合并自 codex-everheart）：无 key 也能聊天/创建
@@ -18,6 +18,7 @@
 - [x] **角色入库**：8 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
 - [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频
 - [x] **新创建角色自动生成肖像**（`/api/companions/:id/portrait` + 创建页接入）
+- [x] **README 首页截图**（`screenshots/home.png`，用 `pnpm screenshot:home` 在 dev server 上重拍）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。
@@ -59,8 +60,8 @@
 1. `cd everheart && pnpm install`
 2. 配置 `DEEPSEEK_API_KEY`
 3. `pnpm dev`
-4. 打开 http://localhost:3000/chat（platform 下为 http://localhost:4904/chat）  
-   或直接：
+4. 打开 http://localhost:3000（platform 下为 http://localhost:4904）  
+   首页是 8 位角色肖像墙；聊天：
    - /chat/demo-elena  （神秘图书管理员）
    - /chat/demo-kai    （温暖咖啡师）
    - /chat/demo-lyra   （18+ 亲密伴侣）

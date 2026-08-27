@@ -4,6 +4,10 @@
 
 Create or buy AI companions (chat, portrait, voice, long-term memory) for a one-time price. Adult content supported behind verified 18+ checks.
 
+<!-- screenshots -->
+![Everheart homepage](screenshots/home.png)
+<!-- /screenshots -->
+
 > **2026-08-23: merged with `codex-everheart`.** This repo is now the single
 > Everheart app. The Codex demo's offline chat engine (`src/lib/offline/brain.js`),
 > offline persona generator (`src/lib/offline/persona.js`), AgeGate component,
@@ -91,7 +95,9 @@ See `.env.example`.
     stored.** Created companions are also upserted to the DB.
 11. **Portraits in the UI** – the home page showcases every companion with
     their generated portrait; the chat sidebar and header show the portrait,
-    and hover plays the 3s Ken Burns video clip.
+    and hover plays the 3s Ken Burns video clip. A homepage screenshot lives
+    in `screenshots/home.png` (shown at the top of this README). Recapture
+    with the app running (`pnpm screenshot:home`, default http://localhost:4904).
 12. **Auto portrait for created companions** – the create flow generates a
     portrait with the local ComfyUI (`POST /api/companions/:id/portrait`,
     reusing `scripts/comfyui/workflow-portrait.json`) and persists it to
