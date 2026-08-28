@@ -235,6 +235,29 @@ The operator seeds the first catalog with AI-generated companions so the marketp
 5. **Privacy** — encrypted chat history, no training on user chats, data export.
 6. **Payment policy** — sell software via mainstream processors (allowed); defer adult-content marketplace payouts to processors that permit adult digital goods.
 
+### 6.6 Current MVP implementation status
+
+The MVP already ships a meaningful slice of the design above:
+
+- **Portrait pipeline is live and local** — `scripts/generate-companion-portraits.mjs`
+  drives ComfyUI: `workflow-portrait.json` (majicmix) for SFW roles and
+  `workflow-nsfw.json` (epicrealism Natural Sin) for 18+ roles via a per-companion
+  `"workflow": "nsfw"` flag, so adult companions are genuinely adult (Lyra is wired
+  this way). `--companion <id>` regenerates a single role without touching the rest.
+- **Living portraits** — every companion ships `portrait.png` + `alternate.png`
+  + a 3s Ken Burns mp4; home cards and the chat sidebar play the clip on hover,
+  and the chat screen keeps it looping in the header/loading avatar.
+- **Voice is live** — streaming sentence-by-sentence TTS (edge-tts) with a local
+  Kokoro fallback and bubble subtitles.
+- **Roster is persisted** — companions live in Supabase `eh_companion`;
+  messages/memory intentionally stay in the browser.
+- **18+ gating is still checkbox-based** (AgeGate) — real identity verification
+  remains on the roadmap. NSFW assets currently live under `public/`, but the
+  public homepage only shows each 18+ companion's SFW alternate shot (Lyra:
+  `alternate.png`/`alternate.mp4`); the adult portrait appears only inside the
+  age-gated chat. Moving the NSFW files behind an authed route remains a
+  pre-production task.
+
 ---
 
 ## 7. MVP scope + 90-day roadmap

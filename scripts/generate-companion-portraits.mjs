@@ -4,10 +4,16 @@
  * local ComfyUI (http://127.0.0.1:8188) with a reusable workflow.
  *
  *   node scripts/generate-companion-portraits.mjs
+ *   node scripts/generate-companion-portraits.mjs --companion kai
  *
  * Output: public/companions/<id>/<shot>.png + public/companions/manifest.json
  * Consistency: each companion keeps one seed + one appearance block across all
- * shots; only the pose/expression suffix changes.
+ * shots; only the pose/expression suffix changes. A companion may opt into a
+ * different workflow via "workflow": "nsfw" (uses workflow-nsfw.json,
+ * e.g. an adult-tuned checkpoint for 18+ roles). Pass --companion <id> to
+ * regenerate a single companion (other manifest entries are preserved).
+ * Individual shots may override appearance / workflow / negative (e.g. an
+ * NSFW companion's alternate shot can stay SFW for the public homepage).
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -23,9 +29,36 @@ const OUT_DIR = join(ROOT, "public", "companions");
 const config = JSON.parse(
   await readFile(join(HERE, "comfyui", "companions.json"), "utf8"),
 );
-const workflowTemplate = JSON.parse(
-  await readFile(join(HERE, "comfyui", "workflow-portrait.json"), "utf8"),
-);
+
+/** Load a workflow template once per variant (portrait / nsfw / ...). */
+const workflowCache = new Map();
+async function getWorkflowTemplate(variant) {
+  if (!workflowCache.has(variant)) {
+    const file = join(HERE, "comfyui", `workflow-${variant}.json`);
+    workflowCache.set(
+      variant,
+      JSON.parse(await readFile(file, "utf8")),
+    );
+  }
+  return workflowCache.get(variant);
+}
+
+const onlyId = (() => {
+  const args = process.argv.slice(2);
+  const inline = args.find((a) => a.startsWith("--companion="));
+  if (inline) return inline.split("=")[1];
+  const flagAt = args.indexOf("--companion");
+  return flagAt >= 0 ? args[flagAt + 1] : "";
+})();
+
+const companions = onlyId
+  ? config.companions.filter((c) => c.id === onlyId)
+  : config.companions;
+
+if (companions.length === 0) {
+  console.error(`No companion matches --companion=${onlyId || ""}`);
+  process.exit(1);
+}
 
 const clientId = randomUUID();
 
@@ -41,10 +74,11 @@ async function comfy(pathname, body) {
   return res.json();
 }
 
-function buildWorkflow(companion, shot) {
-  const wf = structuredClone(workflowTemplate);
+async function buildWorkflow(companion, shot) {
+  const variant = shot.workflow ?? companion.workflow ?? "portrait";
+  const wf = structuredClone(await getWorkflowTemplate(variant));
   const prompt = [
-    companion.appearance,
+    shot.appearance ?? companion.appearance,
     shot.suffix,
     config.style_tail,
   ].join(", ");
@@ -57,7 +91,7 @@ function buildWorkflow(companion, shot) {
   wf["5"].inputs.width = config.width;
   wf["5"].inputs.height = config.height;
   wf["6"].inputs.text = prompt;
-  wf["7"].inputs.text = config.negative;
+  wf["7"].inputs.text = shot.negative ?? companion.negative ?? config.negative;
   wf["9"].inputs.filename_prefix = `eh-portraits/${companion.id}/${shot.key}`;
   return wf;
 }
@@ -93,31 +127,42 @@ async function downloadImage(image, dest) {
   await writeFile(dest, Buffer.from(await res.arrayBuffer()));
 }
 
-const manifest = {
-  generatedAt: new Date().toISOString(),
-  comfyUrl: COMFY,
-  model: config.model,
-  width: config.width,
-  height: config.height,
-  steps: config.steps,
-  cfg: config.cfg,
-  sampler: config.sampler,
-  scheduler: config.scheduler,
+// When regenerating a single companion, preserve the other entries already
+// recorded in the manifest so a partial run doesn't wipe the roster metadata.
+let manifest;
+try {
+  manifest = onlyId
+    ? JSON.parse(await readFile(join(OUT_DIR, "manifest.json"), "utf8"))
+    : null;
+} catch {
+  manifest = null;
+}
+manifest = manifest ?? {
   companions: {},
 };
+manifest.generatedAt = new Date().toISOString();
+manifest.comfyUrl = COMFY;
+manifest.model = config.model;
+manifest.width = config.width;
+manifest.height = config.height;
+manifest.steps = config.steps;
+manifest.cfg = config.cfg;
+manifest.sampler = config.sampler;
+manifest.scheduler = config.scheduler;
 
 let index = 0;
-const total = config.companions.reduce((n, c) => n + c.shots.length, 0);
+const total = companions.reduce((n, c) => n + c.shots.length, 0);
 
-for (const companion of config.companions) {
+for (const companion of companions) {
   manifest.companions[companion.id] = {
     name: companion.name,
     seed: companion.seed,
+    workflow: companion.workflow || "portrait",
     shots: {},
   };
   for (const shot of companion.shots) {
     index += 1;
-    const wf = buildWorkflow(companion, shot);
+    const wf = await buildWorkflow(companion, shot);
     const { prompt_id } = await comfy("/prompt", { prompt: wf, client_id: clientId });
     const image = await waitForImage(prompt_id, companion, shot);
     const destDir = join(OUT_DIR, companion.id);
@@ -126,7 +171,8 @@ for (const companion of config.companions) {
     await downloadImage(image, dest);
     manifest.companions[companion.id].shots[shot.key] = {
       file: `${companion.id}/${shot.key}.png`,
-      prompt: [companion.appearance, shot.suffix, config.style_tail].join(", "),
+      workflow: shot.workflow ?? companion.workflow ?? "portrait",
+      prompt: [shot.appearance ?? companion.appearance, shot.suffix, config.style_tail].join(", "),
     };
     console.log(
       `[${index}/${total}] ${companion.id}/${shot.key} -> ${dest} (${image.filename})`,

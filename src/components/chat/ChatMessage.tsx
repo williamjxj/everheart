@@ -1,5 +1,6 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
 import { splitSentences } from "@/lib/speech";
 
 interface ChatMessageProps {
@@ -37,12 +38,12 @@ export function ChatMessage({
                 : undefined
             }
           >
-            {sentence}
+            <Markdown inline>{sentence}</Markdown>
             {i < sentences.length - 1 ? " " : ""}
           </span>
         );
       })
-    : content;
+    : <Markdown>{content}</Markdown>;
 
   return (
     <div
@@ -63,5 +64,64 @@ export function ChatMessage({
         )}
       </div>
     </div>
+  );
+}
+
+/** Lightweight markdown renderer styled for chat bubbles. */
+function Markdown({
+  children,
+  inline = false,
+}: {
+  children: string;
+  inline?: boolean;
+}) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) =>
+          inline ? <span>{children}</span> : <p>{children}</p>,
+        strong: ({ children }) => (
+          <strong className="font-semibold">{children}</strong>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        code: ({ children }) => (
+          <code className="bg-black/30 rounded px-1 py-0.5 text-[13px] font-mono">
+            {children}
+          </code>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-rose-400 underline"
+          >
+            {children}
+          </a>
+        ),
+        h1: ({ children }) => (
+          <h1 className="text-lg font-bold mt-2 mb-1">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-base font-bold mt-2 mb-1">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-[15px] font-semibold mt-2 mb-1">{children}</h3>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc pl-5 my-1">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-5 my-1">{children}</ol>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-zinc-600 pl-3 my-1 text-zinc-300">
+            {children}
+          </blockquote>
+        ),
+      }}
+    >
+      {children}
+    </ReactMarkdown>
   );
 }

@@ -23,12 +23,13 @@
     {
       "id": "kai",
       "name": "Kai",
-      "seed": 20260825,
+      "seed": 20260912,
       "nsfw": false,
-      "appearance": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater",
+      "appearance": "Kai, a handsome young male barista in his mid twenties, single subject, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater",
+      "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit, two people, extra person, background figures, duplicate person, second figure, woman, female, extra hand, mutated hands",
       "shots": [
-        { "key": "portrait", "suffix": "portrait, looking at the viewer, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup" },
-        { "key": "alternate", "suffix": "three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting" }
+        { "key": "portrait", "suffix": "portrait, looking at the viewer, solo portrait, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup, natural hands" },
+        { "key": "alternate", "suffix": "three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting, solo portrait, natural hands" }
       ]
     },
     {
@@ -36,10 +37,18 @@
       "name": "Lyra",
       "seed": 20260826,
       "nsfw": true,
-      "appearance": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night",
+      "workflow": "nsfw",
+      "appearance": "Lyra, a stunning voluptuous adult woman in her late twenties, long wavy chestnut hair cascading over her shoulders, sharp green eyes, confident playful smile, flawless soft skin, full nude body, bare breasts, modern city loft at night",
+      "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, male, man, two people, extra person, clothed, clothes, underwear, bra",
       "shots": [
-        { "key": "portrait", "suffix": "portrait, looking at the viewer with a slow confident smile, floor-to-ceiling windows with city light bokeh behind, glass of red wine in hand" },
-        { "key": "alternate", "suffix": "three-quarter view leaning against a window frame, city skyline at night, soft moody lighting" }
+        { "key": "portrait", "suffix": "sensual full-body nude portrait, standing beside floor-to-ceiling windows, city light bokeh behind her, looking at the viewer with a slow confident smile, one hand resting on her hip, glass of red wine on the windowsill, soft cinematic lighting" },
+        {
+          "key": "alternate",
+          "workflow": "portrait",
+          "appearance": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night",
+          "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit",
+          "suffix": "three-quarter view leaning against a window frame, city skyline at night, soft moody lighting"
+        }
       ]
     },
     {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T18:06:18.009Z",
+  "generatedAt": "2026-08-28T04:21:05.423Z",
   "comfyUrl": "http://127.0.0.1:8188",
   "model": "majicmixRealistic_v7.safetensors",
   "width": 512,
@@ -25,28 +25,31 @@
     },
     "kai": {
       "name": "Kai",
-      "seed": 20260825,
+      "seed": 20260912,
       "shots": {
         "portrait": {
           "file": "kai/portrait.png",
-          "prompt": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, portrait, looking at the viewer, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+          "prompt": "Kai, a handsome young male barista in his mid twenties, single subject, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, portrait, looking at the viewer, solo portrait, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup, natural hands, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
         },
         "alternate": {
           "file": "kai/alternate.png",
-          "prompt": "Kai, a warm and laid-back barista in his mid twenties, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+          "prompt": "Kai, a handsome young male barista in his mid twenties, single subject, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater, three-quarter view laughing softly while wiping the counter with a towel, espresso machine in the background, warm amber lighting, solo portrait, natural hands, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
         }
       }
     },
     "lyra": {
       "name": "Lyra",
       "seed": 20260826,
+      "workflow": "nsfw",
       "shots": {
         "portrait": {
           "file": "lyra/portrait.png",
-          "prompt": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night, portrait, looking at the viewer with a slow confident smile, floor-to-ceiling windows with city light bokeh behind, glass of red wine in hand, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
+          "workflow": "nsfw",
+          "prompt": "Lyra, a stunning voluptuous adult woman in her late twenties, long wavy chestnut hair cascading over her shoulders, sharp green eyes, confident playful smile, flawless soft skin, full nude body, bare breasts, modern city loft at night, sensual full-body nude portrait, standing beside floor-to-ceiling windows, city light bokeh behind her, looking at the viewer with a slow confident smile, one hand resting on her hip, glass of red wine on the windowsill, soft cinematic lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
         },
         "alternate": {
           "file": "lyra/alternate.png",
+          "workflow": "portrait",
           "prompt": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night, three-quarter view leaning against a window frame, city skyline at night, soft moody lighting, photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece"
         }
       }

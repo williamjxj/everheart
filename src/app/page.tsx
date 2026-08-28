@@ -40,28 +40,28 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {DEMO_COMPANIONS.map((c) => (
-              <Link
-                key={c.id}
-                href={`/chat/${c.id}`}
+            <Link
+              key={c.id}
+              href={`/chat/${c.id}`}
                 className="group rounded-2xl border border-zinc-800 bg-zinc-900/60 overflow-hidden hover:border-rose-500/60 hover:bg-zinc-900 transition"
                 onMouseEnter={() => setHoveredId(c.id)}
                 onMouseLeave={() => setHoveredId(null)}
-              >
+            >
                 <div className="relative aspect-[2/3] overflow-hidden bg-zinc-800">
-                  {hoveredId === c.id && c.portraitUrl ? (
+                  {(hoveredId === c.id && (c.homePortraitUrl ?? c.portraitUrl)) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <video
-                      src={c.portraitUrl.replace(/\.png$/, ".mp4")}
+                      src={(c.homePortraitUrl ?? c.portraitUrl)?.replace(/\.png$/, ".mp4")}
                       autoPlay
                       muted
                       loop
                       playsInline
                       className="w-full h-full object-cover"
                     />
-                  ) : c.portraitUrl ? (
+                  ) : (c.homePortraitUrl ?? c.portraitUrl) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={c.portraitUrl}
+                      src={c.homePortraitUrl ?? c.portraitUrl ?? undefined}
                       alt={c.name}
                       className="w-full h-full object-cover transition duration-300 group-hover:scale-[1.03]"
                     />

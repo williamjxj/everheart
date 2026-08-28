@@ -16,9 +16,17 @@
 - [x] **语音聊天**（edge-tts 按角色音色 en/zh + 语音输入 Web Speech + 语言切换）
 - [x] **语音升级**：流式逐句播报（边出字边说话）+ 气泡字幕高亮 + 本地 Kokoro 离线音色（无网可用，edge 自动兜底）
 - [x] **角色入库**：8 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
-- [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频
+- [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频；进入聊天页后头部头像/加载页持续播放微动视频（mp4）
 - [x] **新创建角色自动生成肖像**（`/api/companions/:id/portrait` + 创建页接入）
 - [x] **README 首页截图**（`screenshots/home.png`，用 `pnpm screenshot:home` 在 dev server 上重拍）
+- [x] **NSFW 专用肖像工作流**：18+ 角色与普通角色真正区分——`workflow: "nsfw"`（epicrealism Natural Sin checkpoint），Lyra 已接入（nude/sexy/adult 提示词）
+- [x] **肖像脚本增强**：`--companion <id>` 单角色重生成（保留 manifest 其余条目）+ 每角色可选 workflow
+- [x] **Kai 肖像修复**：右部多人物/手部瑕疵 → 新种子 20260912 + 单人/自然手提示词重生成（png + mp4）
+- [x] **首页公开访问安全**：18+ 角色首页展示 SFW alternate（Lyra：`alternate.png` + `alternate.mp4`），NSFW portrait 只出现在 age-gated 聊天页
+- [x] **README 截图重拍**：`screenshots/home.png` 已按新首页更新（Lyra 卡片显示 SFW alternate）
+- [x] **语音只读对白**：朗读跳过 `*...*` 动作/旁白（也去掉 markdown 语法痕迹），只播实际台词
+- [x] **气泡支持 markdown + emoji**：加粗/斜体/代码/链接/列表渲染，emoji 正常显示，当前朗读句高亮字幕
+- [x] **聊天页角色名片**：顶部可收起简介卡（mp4 头像 + 年龄/标签/简介）+ 模糊动态背景，随时知道在跟谁聊
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。

@@ -22,7 +22,10 @@ export function splitStreamBuffer(text: string): {
   complete: string[];
   rest: string;
 } {
-  const re = /[^.!?。！？]+[.!?。！？]+[”"'）)]?/g;
+  // The trailing class includes `*` so an action span like "*He smiles.*"
+  // is kept whole — splitting inside it would leave an unbalanced asterisk
+  // that cleanSpeechText can't strip.
+  const re = /[^.!?。！？]+[.!?。！？]+[”"'）)*]?/g;
   const complete: string[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
@@ -32,4 +35,22 @@ export function splitStreamBuffer(text: string): {
     last = m.index + m[0].length;
   }
   return { complete, rest: text.slice(last) };
+}
+
+/**
+ * Strip narration/actions and markdown syntax before speaking a sentence.
+ * Roleplay replies use *...* for stage directions (e.g. "*Kai smiles.* Hey.")
+ * — those are actions, not voice, so they are removed. **bold**, `code`,
+ * [links](url) and # headings are reduced to their spoken form; emoji is kept.
+ */
+export function cleanSpeechText(text: string): string {
+  return text
+    .replace(/\*(?!\*)[^*]*\*(?!\*)/g, " ") // *action / italics* → space (keeps **bold**)
+    .replace(/\*\*/g, "") // leftover bold markers
+    .replace(/`([^`]*)`/g, "$1") // inline code → its text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // markdown links → label
+    .replace(/^#{1,6}\s+/gm, "") // headings
+    .replace(/^\s*>\s?/gm, "") // blockquote markers
+    .replace(/\s+/g, " ")
+    .trim();
 }

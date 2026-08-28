@@ -9,7 +9,8 @@ import {
   CompanionSidebar,
   CompanionPreview,
 } from "@/components/chat/CompanionSidebar";
-import { splitStreamBuffer } from "@/lib/speech";
+import { CompanionProfile } from "@/components/chat/CompanionProfile";
+import { cleanSpeechText, splitStreamBuffer } from "@/lib/speech";
 import { CompanionData, DEMO_COMPANIONS } from "@/lib/demo-companions";
 
 interface Message {
@@ -35,6 +36,11 @@ function loadCompanions(): CompanionData[] {
   // Seed demo data
   localStorage.setItem("everheart_companions", JSON.stringify(DEMO_COMPANIONS));
   return DEMO_COMPANIONS;
+}
+
+/** Map a companion's static portrait to its 3s Ken Burns clip when available. */
+function portraitVideoUrl(portraitUrl?: string | null) {
+  return portraitUrl ? portraitUrl.replace(/\.png$/, ".mp4") : undefined;
 }
 
 function loadMessages(companionId: string): Message[] {
@@ -72,6 +78,7 @@ export default function ChatPage() {
   const [inputLang, setInputLang] = useState<"en" | "zh">("en");
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [speaking, setSpeaking] = useState(false);
+  const [showProfile, setShowProfile] = useState(true);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -154,7 +161,11 @@ export default function ChatPage() {
       const { complete, rest } = splitStreamBuffer(speechBufferRef.current);
       speechBufferRef.current = rest;
       if (complete.length > 0) {
-        speechQueueRef.current.push(...complete.map((text) => ({ text })));
+        speechQueueRef.current.push(
+          ...complete
+            .map((text) => ({ text: cleanSpeechText(text) }))
+            .filter((item) => item.text.length > 0)
+        );
         pumpSpeech(c, lang);
       }
     },
@@ -221,8 +232,11 @@ export default function ChatPage() {
         // Greet with voice when the conversation is just the opening line.
         if (history.length === 1 && history[0].id === "opening") {
           if (voiceEnabledRef.current) {
-            speechQueueRef.current.push({ text: found.card.first_mes });
-            pumpSpeech(found, inputLangRef.current);
+            const opening = cleanSpeechText(found.card.first_mes);
+            if (opening) {
+              speechQueueRef.current.push({ text: opening });
+              pumpSpeech(found, inputLangRef.current);
+            }
           }
         }
 
@@ -323,8 +337,11 @@ export default function ChatPage() {
         const rest = speechBufferRef.current.trim();
         speechBufferRef.current = "";
         if (rest) {
-          speechQueueRef.current.push({ text: rest });
-          pumpSpeech(companion, inputLangRef.current);
+          const cleaned = cleanSpeechText(rest);
+          if (cleaned) {
+            speechQueueRef.current.push({ text: cleaned });
+            pumpSpeech(companion, inputLangRef.current);
+          }
         }
 
         // Fire-and-forget: could call a separate endpoint to extract facts later
@@ -374,10 +391,13 @@ export default function ChatPage() {
         <div className="text-center space-y-5">
           <div className="w-20 h-20 mx-auto rounded-full bg-zinc-800 overflow-hidden ring-1 ring-zinc-700">
             {known?.portraitUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={known.portraitUrl}
-                alt={known.name}
+              <video
+                src={portraitVideoUrl(known.portraitUrl)}
+                aria-label={known.name}
+                autoPlay
+                muted
+                loop
+                playsInline
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -442,10 +462,13 @@ export default function ChatPage() {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-medium overflow-hidden">
               {companion.portraitUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={companion.portraitUrl}
-                  alt={companion.name}
+                <video
+                  src={portraitVideoUrl(companion.portraitUrl)}
+                  aria-label={companion.name}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -471,6 +494,14 @@ export default function ChatPage() {
                 18+
               </span>
             )}
+            {!showProfile && (
+              <button
+                onClick={() => setShowProfile(true)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition"
+              >
+                ℹ️ 简介
+              </button>
+            )}
             {isStreaming && (
               <button
                 onClick={handleStop}
@@ -483,8 +514,27 @@ export default function ChatPage() {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="max-w-3xl mx-auto">
+        <div className="flex-1 overflow-y-auto relative px-4 py-6">
+          {/* Living portrait as a soft backdrop */}
+          <div className="pointer-events-none absolute inset-0">
+            <video
+              src={portraitVideoUrl(companion.portraitUrl)}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover opacity-15 blur-md scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/40 to-zinc-950/90" />
+          </div>
+
+          <div className="relative z-10 max-w-3xl mx-auto">
+            {showProfile && (
+              <CompanionProfile
+                companion={companion}
+                onClose={() => setShowProfile(false)}
+              />
+            )}
             {messages.map((m) => (
               <ChatMessage
                 key={m.id}

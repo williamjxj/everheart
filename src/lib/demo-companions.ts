@@ -12,6 +12,8 @@ export interface CompanionData {
   card: any;
   isNsfw: boolean;
   portraitUrl?: string | null;
+  /** Public-safe card image (e.g. SFW alternate for 18+ companions). */
+  homePortraitUrl?: string | null;
   voice?: {
     en: string;
     zh: string;
@@ -91,6 +93,7 @@ export const DEMO_COMPANIONS: CompanionData[] = [
     name: "Lyra",
     isNsfw: true,
     portraitUrl: "/companions/lyra/portrait.png",
+    homePortraitUrl: "/companions/lyra/alternate.png",
     voice: {
       en: "en-US-AvaNeural",
       zh: "zh-CN-XiaoxiaoNeural",
