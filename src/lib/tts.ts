@@ -36,26 +36,21 @@ export const DEFAULT_RATE = "+0%";
 
 /**
  * Strip stage directions / markdown / emoji before speaking so the audio is
- * pure dialogue. When quoted speech is present ("..." action "..."), prefer
- * the quoted parts and drop the narration.
+ * pure dialogue. Only single-asterisk spans (*...*) are treated as narration
+ * and removed — **bold**, quotes, links, and code keep their text.
  */
 export function cleanForSpeech(raw: string): string {
-  let text = (raw || "").replace(/\*+[^*]*\*+/g, " ");
-
-  const quotes = text.match(/“[^”"]*”|"[^"]*"/g);
-  if (quotes && quotes.length > 0) {
-    text = quotes
-      .map((q) => q.replace(/^[“"]|[”"]$/g, ""))
-      .join(" ");
-  }
-
-  text = text
+  return (raw || "")
+    .replace(/\*(?!\*)[^*]*\*(?!\*)/g, " ") // *action / narration* → space (keeps **bold**)
+    .replace(/\*\*/g, "") // leftover bold markers (inner text kept)
+    .replace(/`([^`]*)`/g, "$1") // inline code → its text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // markdown links → label
+    .replace(/^#{1,6}\s+/gm, "") // headings
+    .replace(/^\s*>\s?/gm, "") // blockquote markers
     .replace(/\[[^\]]*\]/g, " ") // [已停止] etc.
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, " ") // emoji
     .replace(/\s+/g, " ")
     .trim();
-
-  return text;
 }
 
 export function isValidRate(rate: string): boolean {

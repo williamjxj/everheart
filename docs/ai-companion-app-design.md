@@ -248,7 +248,16 @@ The MVP already ships a meaningful slice of the design above:
   + a 3s Ken Burns mp4; home cards and the chat sidebar play the clip on hover,
   and the chat screen keeps it looping in the header/loading avatar.
 - **Voice is live** — streaming sentence-by-sentence TTS (edge-tts) with a local
-  Kokoro fallback and bubble subtitles.
+  Kokoro fallback, bubble subtitles, and gapless playback: clips are synthesized
+  ahead of time so there's no pause between sentences; long sentences are chunked
+  under the provider limit, and clips are trimmed of leading/trailing silence.
+  Only single-asterisk `*...*` narration is stripped from voice — `**bold**`,
+  quoted dialogue, links, and code are preserved. STT (Web Speech) runs
+  continuously so long speech isn't cut at pauses, and voices/rates stay
+  per-companion.
+- **UI polish** — chat bubbles render markdown + emoji; a collapsible intro card
+  (living portrait, age, tags, description) plus a blurred video backdrop show
+  who you're talking to; and the app ships an `icon.svg` favicon (rose heart).
 - **Roster is persisted** — companions live in Supabase `eh_companion`;
   messages/memory intentionally stay in the browser.
 - **18+ gating is still checkbox-based** (AgeGate) — real identity verification

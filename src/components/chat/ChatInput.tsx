@@ -67,10 +67,17 @@ export function ChatInput({
     }
     const rec = new SR();
     rec.lang = lang === "zh" ? "zh-CN" : "en-US";
+    // Keep listening across pauses so long sentences / dictation don't get
+    // cut off after the first utterance.
+    rec.continuous = true;
     rec.interimResults = false;
     rec.maxAlternatives = 1;
     rec.onresult = (e: any) => {
-      const transcript = e.results?.[0]?.[0]?.transcript ?? "";
+      let transcript = "";
+      for (let i = e.resultIndex; i < (e.results?.length ?? 0); i++) {
+        const result = e.results[i];
+        if (result?.isFinal) transcript += result[0]?.transcript ?? "";
+      }
       if (transcript) {
         setValue((v) => (v ? `${v} ${transcript}` : transcript));
       }

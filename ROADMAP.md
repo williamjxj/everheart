@@ -24,9 +24,13 @@
 - [x] **Kai 肖像修复**：右部多人物/手部瑕疵 → 新种子 20260912 + 单人/自然手提示词重生成（png + mp4）
 - [x] **首页公开访问安全**：18+ 角色首页展示 SFW alternate（Lyra：`alternate.png` + `alternate.mp4`），NSFW portrait 只出现在 age-gated 聊天页
 - [x] **README 截图重拍**：`screenshots/home.png` 已按新首页更新（Lyra 卡片显示 SFW alternate）
-- [x] **语音只读对白**：朗读跳过 `*...*` 动作/旁白（也去掉 markdown 语法痕迹），只播实际台词
+- [x] **语音只读对白**：朗读只忽略单星号 `*...*` 动作/旁白（`**加粗**`、引语、链接、代码均保留原文），并去掉 markdown 语法痕迹
 - [x] **气泡支持 markdown + emoji**：加粗/斜体/代码/链接/列表渲染，emoji 正常显示，当前朗读句高亮字幕
 - [x] **聊天页角色名片**：顶部可收起简介卡（mp4 头像 + 年龄/标签/简介）+ 模糊动态背景，随时知道在跟谁聊
+- [x] **Favicon**：新增 `src/app/icon.svg`（暗底玫瑰爱心），浏览器标签/书签正常显示
+- [x] **长句朗读**：超长句子自动切分（≤1600 字符/请求），不会触发 `/api/tts` 2000 字上限
+- [x] **STT 连续识别**：`continuous` 模式 + 只取 final 结果，长句/连续语音不会被第一处停顿截断
+- [x] **语音无缝连读**：句子在播放前并行预合成（prefetch buffer）+ 服务端裁剪句首/句尾静音，句间不再有 TTS 请求或 padding 造成的停顿；Lyra 语速 +12% 更自然
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。

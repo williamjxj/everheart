@@ -101,6 +101,7 @@ everheart/
 └── src/
     ├── app/
     │   ├── layout.tsx, page.tsx, globals.css  # homepage companion gallery
+    │   ├── icon.svg                           # favicon (rose heart)
     │   ├── chat/page.tsx                      # redirect → first companion
     │   ├── chat/[companionId]/page.tsx        # chat UI (mp4 header avatar)
     │   ├── create/page.tsx                    # companion creation flow
@@ -148,7 +149,10 @@ everheart/
 
 Implemented so far: creation pipeline, streaming chat UI, roster in Supabase,
 local ComfyUI portraits (SFW + NSFW workflows) with 3s Ken Burns clips, voice
-(edge-tts + local Kokoro fallback), streaming speech + subtitles, AgeGate.
+(edge-tts + local Kokoro fallback), streaming speech + subtitles with gapless
+prefetched playback, long-sentence chunking, and silence-trimmed clips (only
+`*...*` narration is stripped from voice), continuous STT, markdown/emoji
+bubbles, companion intro card + blurred video backdrop, favicon, AgeGate.
 
 Still to do:
 1. Auth (Clerk or NextAuth) + protect API routes

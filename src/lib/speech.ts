@@ -54,3 +54,31 @@ export function cleanSpeechText(text: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/**
+ * Split text for TTS so a single request stays under provider limits
+ * (the /api/tts route rejects > 2000 chars). Prefers sentence boundaries;
+ * over-long sentences are cut at the last word boundary (hard character
+ * split for CJK / space-less text).
+ */
+export function chunkSpeechText(text: string, maxLen = 1600): string[] {
+  const limit = Math.max(1, maxLen || 1600);
+  const chunks: string[] = [];
+  for (const sentence of splitSentences(text)) {
+    const s = sentence.trim();
+    if (!s) continue;
+    if (s.length <= limit) {
+      chunks.push(s);
+      continue;
+    }
+    let rest = s;
+    while (rest.length > limit) {
+      let cut = rest.lastIndexOf(" ", limit);
+      if (cut <= 0) cut = limit;
+      chunks.push(rest.slice(0, cut).trim());
+      rest = rest.slice(cut).trim();
+    }
+    if (rest) chunks.push(rest);
+  }
+  return chunks;
+}

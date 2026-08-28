@@ -14,7 +14,7 @@
 
 import { createHash } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { NextRequest, NextResponse } from "next/server";
@@ -33,6 +33,8 @@ const MAX_TEXT_LENGTH = 2000;
 const LOCAL_TTS_PORT = 8765;
 const LOCAL_TTS_URL = `http://127.0.0.1:${LOCAL_TTS_PORT}`;
 const ROOT = resolve(process.cwd());
+// Bump to invalidate cached clips when synthesis post-processing changes.
+const TTS_CACHE_VERSION = "v4";
 
 function pickPython(): string {
   const candidates = [
@@ -113,6 +115,38 @@ async function synthWithLocal(text: string, voice: string, out: string) {
   await writeFile(out, Buffer.from(await res.arrayBuffer()));
 }
 
+/**
+ * Trim leading/trailing silence from a synthesized clip (edge-tts pads ~0.2s
+ * of silence at the start). Without this, every sentence boundary sounds like
+ * a deliberate pause even when clips are handed off back-to-back.
+ */
+async function trimSilence(input: string, output: string): Promise<boolean> {
+  try {
+    await execFileAsync(
+      "ffmpeg",
+      [
+        "-y",
+        "-loglevel",
+        "error",
+        "-i",
+        input,
+        "-af",
+        "silenceremove=start_periods=1:start_threshold=-35dB:start_silence=0.03,areverse,silenceremove=start_periods=1:start_threshold=-35dB:start_silence=0.03,areverse",
+        "-c:a",
+        "libmp3lame",
+        "-q:a",
+        "4",
+        output,
+      ],
+      { timeout: 30_000 },
+    );
+    const s = await stat(output);
+    return s.size > 1024;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -142,7 +176,7 @@ export async function POST(req: NextRequest) {
     }
 
     const key = createHash("sha1")
-      .update(`${text}|${voice}|${rate}|${engine}|${localVoice}`)
+      .update(`${text}|${voice}|${rate}|${engine}|${localVoice}|${TTS_CACHE_VERSION}`)
       .digest("hex");
     await mkdir(CACHE_DIR, { recursive: true });
     const target = join(CACHE_DIR, `${key}.mp3`);
@@ -169,8 +203,16 @@ export async function POST(req: NextRequest) {
         mime = "audio/wav";
       }
     }
-    const audio = await readFile(tmp);
-    await rename(tmp, target).catch(() => {});
+
+    // Trim boundary silence so consecutive sentences flow naturally.
+    const finalTmp = join(CACHE_DIR, `${key}.final.mp3`);
+    if (await trimSilence(tmp, finalTmp)) {
+      mime = "audio/mpeg";
+    } else {
+      await rename(tmp, finalTmp);
+    }
+    const audio = await readFile(finalTmp);
+    await rename(finalTmp, target).catch(() => {});
 
     return new Response(new Uint8Array(audio), {
       headers: { ...AUDIO_HEADERS, "Content-Type": mime },

@@ -97,7 +97,7 @@ export const DEMO_COMPANIONS: CompanionData[] = [
     voice: {
       en: "en-US-AvaNeural",
       zh: "zh-CN-XiaoxiaoNeural",
-      rate: "+0%",
+      rate: "+12%",
       local: { en: "af_bella", zh: "zf_xiaobei" },
     },
     card: {

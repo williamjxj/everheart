@@ -81,12 +81,21 @@ See `.env.example`.
    en/zh voice + rate, cached by content hash). The chat input has a mic
    button (Web Speech API, Chrome/Edge), an EN/中文 toggle that switches both
    speech recognition and the reply voice, and a speaker toggle to mute.
-   Stage directions wrapped in `*...*` are treated as narration and skipped by
-   voice — only spoken dialogue is read aloud. Requires `uvx` and internet
-   access to Microsoft's TTS service.
+   Recognition runs in continuous mode and keeps accumulating final results,
+   so long sentences / dictation aren't cut off at the first pause. Voices and
+   rates are per-companion (applied even when the roster loads from the DB).
+   Stage directions wrapped in a single `*...*` are treated as narration and
+   skipped by voice — nothing else is dropped (`**bold**`, quoted dialogue,
+   links, and code keep their text). Requires `uvx` and internet access to
+   Microsoft's TTS service. Long replies are chunked per sentence, and
+   over-long sentences are split so every TTS request stays under the provider
+   limit.
 9. **Streaming speech + subtitles** – replies are spoken sentence-by-sentence
    as they stream in (no waiting for the full reply), and the currently spoken
-   sentence is highlighted inside the bubble. **Offline voices**: a local
+   sentence is highlighted inside the bubble. Clips are synthesized *ahead* of
+   playback (several in parallel) and are trimmed of leading/trailing silence,
+   so sentences flow continuously with no pause between them.
+   **Offline voices**: a local
    Kokoro TTS server (`scripts/tts_local_server.py`, EN + 中文) kicks in
    automatically when the network path fails. Chat bubbles render **markdown**
    (bold, italic, code, links, lists) and **emoji**, with spoken sentences
