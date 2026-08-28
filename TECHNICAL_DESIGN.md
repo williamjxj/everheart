@@ -98,10 +98,15 @@ everheart/
 │   ├── screenshot.mjs / screenshot.config.mjs
 │   ├── test-creation-pipeline.ts
 │   └── unit-tests.ts
+├── public/
+│   ├── companions/                 # generated portraits + Ken Burns clips
+│   ├── icons/                      # PWA PNG icons (192/512/maskable/apple)
+│   └── sw.js                       # offline service worker
 └── src/
     ├── app/
     │   ├── layout.tsx, page.tsx, globals.css  # homepage companion gallery
     │   ├── icon.svg                           # favicon (rose heart)
+    │   ├── manifest.ts                        # PWA web app manifest
     │   ├── chat/page.tsx                      # redirect → first companion
     │   ├── chat/[companionId]/page.tsx        # chat UI (mp4 header avatar)
     │   ├── create/page.tsx                    # companion creation flow
@@ -114,6 +119,7 @@ everheart/
     │       └── entitlements/{checkout,webhook}/route.ts
     ├── components/
     │   ├── AgeGate.tsx
+    │   ├── PwaRegister.tsx                    # service worker registration
     │   └── chat/{ChatInput,ChatMessage,CompanionSidebar,CompanionProfile}.tsx
     ├── lib/
     │   ├── llm/{deepseek,creation-pipeline,chat-orchestrator}.ts

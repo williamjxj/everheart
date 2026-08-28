@@ -258,6 +258,11 @@ The MVP already ships a meaningful slice of the design above:
 - **UI polish** — chat bubbles render markdown + emoji; a collapsible intro card
   (living portrait, age, tags, description) plus a blurred video backdrop show
   who you're talking to; and the app ships an `icon.svg` favicon (rose heart).
+- **Installable & offline (PWA)** — web app manifest with PNG/maskable/apple
+  icons, standalone display, and a service worker that precaches the app shell
+  and every demo chat page; companion portraits are cached at runtime, chat
+  history stays in `localStorage`, and the offline brain keeps the chat usable
+  without a connection (mobile "install to home screen" supported).
 - **Roster is persisted** — companions live in Supabase `eh_companion`;
   messages/memory intentionally stay in the browser.
 - **18+ gating is still checkbox-based** (AgeGate) — real identity verification

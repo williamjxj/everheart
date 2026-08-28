@@ -131,6 +131,12 @@ See `.env.example`.
     portrait with the local ComfyUI (`POST /api/companions/:id/portrait`,
     reusing `scripts/comfyui/workflow-portrait.json`) and persists it to
     `eh_companion.portraitUrl`; chat/home pick it up automatically.
+13. **PWA / offline** – the app is installable on mobile (web app manifest,
+    PNG + maskable icons, apple-touch icon) and a service worker precaches the
+    app shell plus every demo chat page. Companion portraits are cached at
+    runtime, chat history stays in `localStorage`, and the offline brain keeps
+    chatting working without a network connection. Force-enable in dev with
+    `?pwa=1`.
 
 ### Roadmap Status
 

@@ -31,6 +31,7 @@
 - [x] **长句朗读**：超长句子自动切分（≤1600 字符/请求），不会触发 `/api/tts` 2000 字上限
 - [x] **STT 连续识别**：`continuous` 模式 + 只取 final 结果，长句/连续语音不会被第一处停顿截断
 - [x] **语音无缝连读**：句子在播放前并行预合成（prefetch buffer）+ 服务端裁剪句首/句尾静音，句间不再有 TTS 请求或 padding 造成的停顿；Lyra 语速 +12% 更自然
+- [x] **PWA / 离线**：web app manifest + PNG/maskable/apple 图标 + service worker（预缓存首页与全部演示聊天页），移动端可安装、断网可玩（聊天记录在 localStorage，离线引擎兜底）
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。

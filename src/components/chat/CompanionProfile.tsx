@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { CompanionData } from "@/lib/demo-companions";
 
 interface CompanionProfileProps {
@@ -9,6 +10,7 @@ interface CompanionProfileProps {
 
 /** Intro card shown at the top of a chat: living portrait + who you're talking to. */
 export function CompanionProfile({ companion, onClose }: CompanionProfileProps) {
+  const [videoFailed, setVideoFailed] = useState(false);
   const videoUrl = companion.portraitUrl?.replace(/\.png$/, ".mp4");
   const age = companion.card?.everheart?.age;
   const tags: string[] = companion.card?.tags ?? [];
@@ -29,15 +31,25 @@ export function CompanionProfile({ companion, onClose }: CompanionProfileProps) 
 
       <div className="w-20 h-24 shrink-0 rounded-xl overflow-hidden bg-zinc-800 ring-1 ring-zinc-700">
         {videoUrl ? (
-          <video
-            src={videoUrl}
-            aria-label={companion.name}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          videoFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={companion.portraitUrl ?? undefined}
+              alt={companion.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <video
+              src={videoUrl}
+              aria-label={companion.name}
+              autoPlay
+              muted
+              loop
+              playsInline
+              onError={() => setVideoFailed(true)}
+              className="w-full h-full object-cover"
+            />
+          )
         ) : (
           <div className="w-full h-full flex items-center justify-center text-2xl">
             {companion.name.slice(0, 1)}
