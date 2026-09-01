@@ -6,7 +6,7 @@
 import { createDeepSeekClient, MODEL_LADDER, ModelTier } from "./deepseek";
 import { assembleContext, MemoryBundle } from "@/lib/memory/context-assembler";
 import { CharacterCard } from "@/types/character-card";
-import { extractFacts, summarizeConversation } from "@/lib/memory/fact-extractor";
+import { extractFacts, summarizeConversation } from "@/lib/memory/fact-extractor-llm";
 import { respond, OfflineCompanion } from "@/lib/offline/brain";
 
 export interface ChatRequest {

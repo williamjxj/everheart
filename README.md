@@ -137,6 +137,14 @@ See `.env.example`.
     runtime, chat history stays in `localStorage`, and the offline brain keeps
     chatting working without a network connection. Force-enable in dev with
     `?pwa=1`.
+14. **Companion memory** – each companion builds a real memory of you over
+    time (inspired by Hermes Agent + CrewAI): durable facts ("User likes
+    hiking"), entity memory ("Buddy: User's dog"), and episodic memory
+    (auto-compacted past conversations). On every message the most relevant
+    facts, entities, and recalled moments are retrieved (importance + recency
+    scoring) and injected into the reply context, so the companion actually
+    remembers what you told it — fully offline, stored only on your device.
+    Open the 🧠 记忆 panel in a chat to see what it remembers (or clear it).
 
 ### Roadmap Status
 

@@ -32,6 +32,7 @@
 - [x] **STT 连续识别**：`continuous` 模式 + 只取 final 结果，长句/连续语音不会被第一处停顿截断
 - [x] **语音无缝连读**：句子在播放前并行预合成（prefetch buffer）+ 服务端裁剪句首/句尾静音，句间不再有 TTS 请求或 padding 造成的停顿；Lyra 语速 +12% 更自然
 - [x] **PWA / 离线**：web app manifest + PNG/maskable/apple 图标 + service worker（预缓存首页与全部演示聊天页），移动端可安装、断网可玩（聊天记录在 localStorage，离线引擎兜底）
+- [x] **伴侣记忆系统**：借鉴 Hermes Agent + CrewAI——持久事实（关于你）、实体记忆（人物/宠物）、情景记忆（自动压缩历史片段）；每条消息按 重要性+近期度 检索并注入回复上下文；🧠 记忆面板可视化（可清空）；全离线、只存本机
 
 > 2026-08-23：已与 codex-everheart 合并，本仓库为唯一 Everheart 应用。
 > 原 codex-everheart 目录已移出 my-business（备份见 /private/tmp）。

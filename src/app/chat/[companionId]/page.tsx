@@ -10,6 +10,23 @@ import {
   CompanionPreview,
 } from "@/components/chat/CompanionSidebar";
 import { CompanionProfile } from "@/components/chat/CompanionProfile";
+import { MemoryPanel } from "@/components/chat/MemoryPanel";
+import {
+  addFacts,
+  clearMemory,
+  emptyMemory,
+  loadMemory,
+  pushEpisode,
+  saveMemory,
+  upsertEntity,
+  type CompanionMemory,
+} from "@/lib/memory/memory-store";
+import { bundleForQuery } from "@/lib/memory/retrieval";
+import {
+  condenseEpisodeLocal,
+  extractEntitiesRuleBased,
+  extractFactsRuleBased,
+} from "@/lib/memory/fact-extractor";
 import {
   chunkSpeechText,
   cleanSpeechText,
@@ -75,14 +92,14 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
-  const [facts, setFacts] = useState<string[]>([]);
-  const [summary, setSummary] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [ageOk, setAgeOk] = useState(true);
   const [inputLang, setInputLang] = useState<"en" | "zh">("en");
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [speaking, setSpeaking] = useState(false);
   const [showProfile, setShowProfile] = useState(true);
+  const [showMemory, setShowMemory] = useState(false);
+  const [memory, setMemory] = useState<CompanionMemory | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -350,15 +367,9 @@ export default function ChatPage() {
           }
         }
 
-        // Load memory (dynamic data stays in the browser)
-        try {
-          const mem = localStorage.getItem(`everheart_mem_${companionId}`);
-          if (mem) {
-            const parsed = JSON.parse(mem);
-            setFacts(parsed.facts || []);
-            setSummary(parsed.summary || "");
-          }
-        } catch {}
+        // Load persistent memory (dynamic data stays in the browser)
+        const mem = loadMemory(companionId);
+        setMemory(mem);
       }
     })();
     return () => {
@@ -371,9 +382,42 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
+  /** Persist what was learned after a completed exchange (offline-first). */
+  const rememberExchange = useCallback(
+    (
+      id: string,
+      userMsg: string,
+      reply: string,
+      prev: CompanionMemory,
+      history: Message[]
+    ) => {
+      const next: CompanionMemory = {
+        ...prev,
+        updatedAt: Date.now(),
+        messageCount: prev.messageCount + 1,
+      };
+      addFacts(next, extractFactsRuleBased(userMsg));
+      for (const ent of extractEntitiesRuleBased(userMsg)) {
+        upsertEntity(next, ent.name, ent.note);
+      }
+      // Episodic memory: every 8 exchanges, compress the recent block.
+      if (next.messageCount % 8 === 0) {
+        const episode = condenseEpisodeLocal(
+          history.slice(-8).map((m) => ({ role: m.role, content: m.content }))
+        );
+        pushEpisode(next, episode.summary, episode.keywords, 0.6);
+      }
+      saveMemory(id, next);
+      setMemory(next);
+    },
+    []
+  );
+
   const sendMessage = useCallback(
     async (text: string) => {
       if (!companion || isStreaming) return;
+      const mem = memory ?? emptyMemory();
+      const recalled = bundleForQuery(mem, text);
 
       setError(null);
       const userMsg: Message = {
@@ -403,8 +447,10 @@ export default function ChatPage() {
               role: m.role,
               content: m.content,
             })),
-            facts,
-            summary,
+            facts: mem.userProfile.slice(0, 10).map((f) => f.text),
+            summary: mem.summary || undefined,
+            entities: recalled.entities,
+            recalledEpisodes: recalled.recalledEpisodes,
             userMessage: text,
             isAdultVerified: ageOk, // gated by AgeGate; later real entitlement
             stream: true,
@@ -453,7 +499,8 @@ export default function ChatPage() {
           startSpeech(companion, inputLangRef.current);
         }
 
-        // Fire-and-forget: could call a separate endpoint to extract facts later
+        // Persist memory: facts, entities, episodic condensation.
+        rememberExchange(companionId, text, full, mem, finalMessages);
       } catch (err: any) {
         if (err.name === "AbortError") {
           // user cancelled
@@ -466,7 +513,7 @@ export default function ChatPage() {
         abortRef.current = null;
       }
     },
-    [companion, companionId, messages, facts, summary, isStreaming, ageOk, resetSpeech, feedSpeechStream, startSpeech]
+    [companion, companionId, messages, memory, isStreaming, ageOk, resetSpeech, feedSpeechStream, startSpeech, rememberExchange]
   );
 
   function handleStop() {
@@ -611,6 +658,20 @@ export default function ChatPage() {
                 ℹ️ 简介
               </button>
             )}
+            <button
+              onClick={() => setShowMemory((v) => !v)}
+              className={`text-xs px-3 py-1.5 rounded-lg transition ${
+                showMemory
+                  ? "bg-rose-600 text-white"
+                  : "bg-zinc-800 hover:bg-zinc-700"
+              }`}
+              title="查看 / 清空记忆"
+            >
+              🧠 记忆
+              {memory && memory.userProfile.length + memory.episodes.length > 0
+                ? ` ${memory.userProfile.length + memory.episodes.length}`
+                : ""}
+            </button>
             {isStreaming && (
               <button
                 onClick={handleStop}
@@ -642,6 +703,16 @@ export default function ChatPage() {
               <CompanionProfile
                 companion={companion}
                 onClose={() => setShowProfile(false)}
+              />
+            )}
+            {showMemory && memory && (
+              <MemoryPanel
+                memory={memory}
+                onClear={() => {
+                  clearMemory(companionId);
+                  const fresh = emptyMemory();
+                  setMemory(fresh);
+                }}
               />
             )}
             {messages.map((m) => (

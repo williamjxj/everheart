@@ -6,6 +6,8 @@
  *   messages: {role, content}[],
  *   summary?: string,
  *   facts?: string[],
+ *   entities?: string[],
+ *   recalledEpisodes?: string[],
  *   userMessage: string,
  *   userApiKey?: string,
  *   isAdultVerified?: boolean
@@ -37,6 +39,8 @@ export async function POST(req: NextRequest) {
       summary: body.summary as string | undefined,
       recentMessages: (body.messages || []) as { role: string; content: string }[],
       facts: (body.facts || []) as string[],
+      entities: (body.entities || []) as string[],
+      recalledEpisodes: (body.recalledEpisodes || []) as string[],
       authorsNote: body.authorsNote as string | undefined,
     };
 

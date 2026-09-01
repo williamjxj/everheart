@@ -15,6 +15,8 @@ export interface MemoryBundle {
   summary?: string;
   recentMessages: { role: string; content: string }[];
   facts: string[]; // retrieved long-term facts
+  entities?: string[]; // known people/things, e.g. "Rex: User's dog"
+  recalledEpisodes?: string[]; // relevant past conversation segments
   authorsNote?: string;
 }
 
@@ -43,8 +45,31 @@ export function assembleContext(
   // Long-term memory facts
   if (memory.facts.length > 0) {
     systemParts.push(
-      "Known facts about the user / relationship (use them naturally):\n" +
-        memory.facts.map((f) => `- ${f}`).join("\n")
+      "What you remember about the user / relationship (use naturally, never recite the list):\n" +
+        memory.facts
+          .slice(0, 10)
+          .map((f) => `- ${f}`)
+          .join("\n")
+    );
+  }
+
+  if (memory.entities && memory.entities.length > 0) {
+    systemParts.push(
+      "People / things you remember:\n" +
+        memory.entities
+          .slice(0, 8)
+          .map((e) => `- ${e}`)
+          .join("\n")
+    );
+  }
+
+  if (memory.recalledEpisodes && memory.recalledEpisodes.length > 0) {
+    systemParts.push(
+      "Relevant past moments you recall (weave in only if it fits the scene):\n" +
+        memory.recalledEpisodes
+          .slice(0, 3)
+          .map((e) => `- ${e}`)
+          .join("\n")
     );
   }
 

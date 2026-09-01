@@ -12,6 +12,13 @@ import { offlineCard } from "@/lib/offline/creation-fallback";
 import { CharacterCardSchema } from "@/types/character-card";
 import { cleanForSpeech } from "@/lib/tts";
 import { splitSentences, splitStreamBuffer } from "@/lib/speech";
+import {
+  extractFactsRuleBased,
+  extractEntitiesRuleBased,
+  condenseEpisodeLocal,
+} from "@/lib/memory/fact-extractor";
+import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
+import { bundleForQuery } from "@/lib/memory/retrieval";
 
 let failures = 0;
 
@@ -74,7 +81,11 @@ test("cleans stage directions and keeps dialogue for speech", () => {
   assert.equal(cleanForSpeech("*She smiles.* Hello there."), "Hello there.");
   assert.equal(
     cleanForSpeech('"There you are." takes a slow breath. "Now we can start."'),
-    "There you are. Now we can start."
+    '"There you are." takes a slow breath. "Now we can start."'
+  );
+  assert.equal(
+    cleanForSpeech('*He nods.* "Got it" — **really** got it.'),
+    '"Got it" — really got it.'
   );
   assert.equal(cleanForSpeech("Hello   [已停止] world! 😊"), "Hello world!");
 });
@@ -97,6 +108,58 @@ test("splitStreamBuffer keeps the trailing partial fragment", () => {
   );
   assert.deepEqual(complete, ["Hello there.", "How are you?"]);
   assert.equal(rest, " I'm doing");
+});
+
+console.log("companion memory");
+test("rule-based facts are clean and bounded", () => {
+  const facts = extractFactsRuleBased(
+    "Hi, my name is Alex and I love hiking. I work as a nurse."
+  );
+  assert.ok(facts.some((f) => f.includes("name is Alex")));
+  assert.ok(facts.some((f) => f.includes("likes hiking")));
+  assert.ok(facts.some((f) => f.includes("works as a nurse")));
+  assert.equal(facts.length, 3);
+});
+
+test("no junk facts from vague messages", () => {
+  assert.deepEqual(
+    extractFactsRuleBased("I am tired today, just want to rest."),
+    []
+  );
+});
+
+test("entities are captured with a note", () => {
+  const entities = extractEntitiesRuleBased(
+    "My dog Buddy is a golden retriever."
+  );
+  assert.equal(entities.length, 1);
+  assert.equal(entities[0].name, "Buddy");
+  assert.equal(entities[0].note, "User's dog");
+});
+
+test("memory store dedupes and recalls by relevance", () => {
+  const m = emptyMemory();
+  addFacts(m, extractFactsRuleBased("My name is Alex and I love hiking."));
+  addFacts(m, extractFactsRuleBased("My name is Alex and I love hiking."));
+  upsertEntity(m, "Buddy", "User's dog");
+  pushEpisode(m, "Planned a Banff hiking trip.", ["hiking", "banff"]);
+
+  assert.equal(m.userProfile.length, 2); // name + hiking, deduped on re-mention
+  assert.equal(m.entities.length, 1);
+  assert.equal(m.episodes.length, 1);
+
+  const recalled = bundleForQuery(m, "what about hiking?");
+  assert.ok(recalled.facts.some((f) => f.includes("hiking")));
+  assert.ok(recalled.recalledEpisodes.some((e) => e.includes("hiking")));
+});
+
+test("episodic condensation produces a summary + keywords", () => {
+  const ep = condenseEpisodeLocal([
+    { role: "user", content: "I am planning a trip to Banff next week" },
+    { role: "assistant", content: "That sounds amazing!" },
+  ]);
+  assert.ok(ep.summary.includes("Banff"));
+  assert.ok(ep.keywords.includes("banff"));
 });
 
 if (failures > 0) {

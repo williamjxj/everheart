@@ -263,6 +263,13 @@ The MVP already ships a meaningful slice of the design above:
   and every demo chat page; companion portraits are cached at runtime, chat
   history stays in `localStorage`, and the offline brain keeps the chat usable
   without a connection (mobile "install to home screen" supported).
+- **Growing companion memory** — borrowing from Hermes Agent (bounded, curated
+  memory: user profile + notes) and CrewAI (atomic facts, entity memory,
+  episodic recall): each companion persists durable facts about you, named
+  entities, and auto-compacted past episodes; the most relevant items are
+  retrieved per message (importance + recency scoring) and injected into the
+  reply context. A 🧠 panel shows what it remembers (and can clear it). All
+  memory is client-side (`localStorage`), offline-first, per companion.
 - **Roster is persisted** — companions live in Supabase `eh_companion`;
   messages/memory intentionally stay in the browser.
 - **18+ gating is still checkbox-based** (AgeGate) — real identity verification

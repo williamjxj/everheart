@@ -123,7 +123,7 @@ everheart/
     │   └── chat/{ChatInput,ChatMessage,CompanionSidebar,CompanionProfile}.tsx
     ├── lib/
     │   ├── llm/{deepseek,creation-pipeline,chat-orchestrator}.ts
-    │   ├── memory/{context-assembler,fact-extractor}.ts
+    │   ├── memory/{context-assembler,fact-extractor,memory-store,retrieval}.ts
     │   ├── payments/stripe.ts
     │   ├── cards/export.ts
     │   ├── db/client.ts
@@ -159,6 +159,8 @@ local ComfyUI portraits (SFW + NSFW workflows) with 3s Ken Burns clips, voice
 prefetched playback, long-sentence chunking, and silence-trimmed clips (only
 `*...*` narration is stripped from voice), continuous STT, markdown/emoji
 bubbles, companion intro card + blurred video backdrop, favicon, AgeGate.
+Companion memory (facts / entities / episodes with importance+recency
+retrieval, visible via the 🧠 panel) is client-side and offline-first.
 
 Still to do:
 1. Auth (Clerk or NextAuth) + protect API routes
