@@ -26,5 +26,6 @@ prisma/dev.db-journal
 .idea/
 .vscode/
 .vercel
+.omo/
 # Screenshots (keep home.png; ignore generated reports)
 screenshots/report.json
