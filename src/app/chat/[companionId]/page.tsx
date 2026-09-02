@@ -40,6 +40,30 @@ interface Message {
   content: string;
 }
 
+/** Speech queue bounds: keep buffered text (~2200 chars) small so a long
+ *  reply doesn't prefetch everything, while staying responsive for short ones. */
+const MAX_BUFFERED_CHARS = 2200;
+const MAX_PREPARED_MIN = 2;
+const MAX_PREPARED_MAX = 8;
+const MAX_CONCURRENT_MIN = 1;
+const MAX_CONCURRENT_MAX = 4;
+
+function speechQueueLimits(
+  queue: string[],
+  prepared: { text: string }[]
+): { maxPrepared: number; maxConcurrent: number } {
+  const texts = [...queue, ...prepared.map((p) => p.text)];
+  const total = texts.join("").length;
+  const avg = texts.length ? Math.max(80, Math.round(total / texts.length)) : 200;
+  const byChars = Math.max(1, Math.floor(MAX_BUFFERED_CHARS / avg));
+  const maxPrepared = Math.min(MAX_PREPARED_MAX, Math.max(MAX_PREPARED_MIN, byChars));
+  const maxConcurrent = Math.min(
+    MAX_CONCURRENT_MAX,
+    Math.max(MAX_CONCURRENT_MIN, Math.ceil(maxPrepared / 2))
+  );
+  return { maxPrepared, maxConcurrent };
+}
+
 
 
 // Demo seed companions (localStorage fallback when no DB yet)
@@ -126,23 +150,29 @@ export default function ChatPage() {
   >([]);
   const [activeSubtitle, setActiveSubtitle] = useState<string | null>(null);
 
-  const MAX_PREPARED_CLIPS = 6;
-  const MAX_CONCURRENT_SYNTH = 4;
-
-  /** Synthesize one TTS clip (already chunked to stay under provider limits). */
+  /** Synthesize one TTS clip (already chunked to stay under provider limits).
+   *  Retries once before giving up. */
   const synthClip = useCallback(
     async (text: string, c: CompanionData, lang: "en" | "zh") => {
       const voice = c.voice?.[lang] || (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
       const rate = c.voice?.rate || "+0%";
       const localVoice = c.voice?.local?.[lang] || "";
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice, rate, localVoice, engine: "auto" }),
-      });
-      if (!res.ok) throw new Error(`tts ${res.status}`);
-      const blob = await res.blob();
-      return new Audio(URL.createObjectURL(blob));
+      let lastErr: unknown;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice, rate, localVoice, engine: "auto" }),
+          });
+          if (!res.ok) throw new Error(`tts ${res.status}`);
+          const blob = await res.blob();
+          return new Audio(URL.createObjectURL(blob));
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr;
     },
     []
   );
@@ -163,10 +193,14 @@ export default function ChatPage() {
           speechSessionRef.current === session &&
           voiceEnabledRef.current
         ) {
+          const { maxPrepared, maxConcurrent } = speechQueueLimits(
+            speechQueueRef.current,
+            preparedAudioRef.current
+          );
           while (
             speechQueueRef.current.length > 0 &&
-            speechInFlightRef.current < MAX_CONCURRENT_SYNTH &&
-            preparedAudioRef.current.length < MAX_PREPARED_CLIPS
+            speechInFlightRef.current < maxConcurrent &&
+            preparedAudioRef.current.length < maxPrepared
           ) {
             const text = speechQueueRef.current.shift()!;
             const placeholder: {
@@ -300,6 +334,11 @@ export default function ChatPage() {
     setActiveSubtitle(null);
     setSpeaking(false);
   }, []);
+
+  /** Barge-in: the user started talking, so stop the companion's voice. */
+  const handleBargeIn = useCallback(() => {
+    resetSpeech();
+  }, [resetSpeech]);
 
   // Load companions + current companion + history
   useEffect(() => {
@@ -767,6 +806,8 @@ export default function ChatPage() {
           onLangChange={setInputLang}
           voiceEnabled={voiceEnabled}
           onToggleVoice={() => setVoiceEnabled((v) => !v)}
+          speaking={speaking}
+          onBargeIn={handleBargeIn}
         />
       </div>
     </div>

@@ -8,7 +8,11 @@
  *              (falls back to `uvx edge-tts`), requires network.
  *   2. local – Kokoro TTS via a persistent local server
  *              (scripts/tts_local_server.py), works offline.
- * Auto tries edge first and falls back to local when the network call fails.
+ *   3. cloud – OpenAI TTS via the official API (requires OPENAI_API_KEY).
+ * Auto tries edge → Kokoro → cloud, so local dev keeps working and
+ * serverless (Vercel, no Python/uvx) can fall back to the cloud provider.
+ * EVERHEART_TTS_MODE=local|cloud|auto picks the default when the client does
+ * not send an explicit `engine`.
  * Output is cached on disk by content hash.
  */
 
@@ -17,6 +21,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
+import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import {
   cleanForSpeech,
@@ -24,6 +29,7 @@ import {
   DEFAULT_VOICE,
   isValidKokoroVoice,
   isValidRate,
+  mapCloudVoice,
   TTS_VOICES,
 } from "@/lib/tts";
 
@@ -115,6 +121,21 @@ async function synthWithLocal(text: string, voice: string, out: string) {
   await writeFile(out, Buffer.from(await res.arrayBuffer()));
 }
 
+/** OpenAI TTS cloud path (mp3). Requires OPENAI_API_KEY. */
+async function synthWithCloud(text: string, voice: string, out: string) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("cloud TTS requires OPENAI_API_KEY");
+  }
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const res = await client.audio.speech.create({
+    model: "tts-1",
+    voice: mapCloudVoice(voice),
+    input: text,
+    response_format: "mp3",
+  });
+  await writeFile(out, Buffer.from(await res.arrayBuffer()));
+}
+
 /**
  * Trim leading/trailing silence from a synthesized clip (edge-tts pads ~0.2s
  * of silence at the start). Without this, every sentence boundary sounds like
@@ -166,8 +187,12 @@ export async function POST(req: NextRequest) {
       );
     }
     const rate = isValidRate(String(body.rate ?? "")) ? String(body.rate) : DEFAULT_RATE;
-    const engine = String(body.engine ?? "auto");
-    if (!["auto", "edge", "local"].includes(engine)) {
+    const mode = String(process.env.EVERHEART_TTS_MODE || "local").toLowerCase();
+    const engine = String(
+      body.engine ??
+        (mode === "cloud" ? "cloud" : mode === "auto" ? "auto" : "auto")
+    ).trim();
+    if (!["auto", "edge", "local", "cloud"].includes(engine)) {
       return NextResponse.json({ error: "invalid engine" }, { status: 400 });
     }
     const localVoice = String(body.localVoice ?? "");
@@ -176,7 +201,7 @@ export async function POST(req: NextRequest) {
     }
 
     const key = createHash("sha1")
-      .update(`${text}|${voice}|${rate}|${engine}|${localVoice}|${TTS_CACHE_VERSION}`)
+      .update(`${text}|${voice}|${rate}|${engine}|${localVoice}|${mode}|${TTS_CACHE_VERSION}`)
       .digest("hex");
     await mkdir(CACHE_DIR, { recursive: true });
     const target = join(CACHE_DIR, `${key}.mp3`);
@@ -190,17 +215,24 @@ export async function POST(req: NextRequest) {
 
     const tmp = join(CACHE_DIR, `${key}.tmp.mp3`);
     let mime = "audio/mpeg";
-    if (engine === "local") {
+    if (engine === "cloud") {
+      await synthWithCloud(text, voice, tmp);
+    } else if (engine === "edge") {
+      await synthWithEdge(text, voice, rate, tmp);
+    } else if (engine === "local") {
       await synthWithLocal(text, localVoice || "af_heart", tmp);
       mime = "audio/wav";
     } else {
       try {
         await synthWithEdge(text, voice, rate, tmp);
       } catch (edgeErr) {
-        if (engine === "edge") throw edgeErr;
-        // Network path failed → fall back to the local Kokoro server.
-        await synthWithLocal(text, localVoice || "af_heart", tmp);
-        mime = "audio/wav";
+        // Network path failed → local Kokoro, then cloud as the last resort.
+        try {
+          await synthWithLocal(text, localVoice || "af_heart", tmp);
+          mime = "audio/wav";
+        } catch {
+          await synthWithCloud(text, voice, tmp);
+        }
       }
     }
 

@@ -7,6 +7,34 @@
 
 export const DEFAULT_VOICE = "en-US-AvaNeural";
 
+/** Edge/neural voice id -> closest OpenAI TTS voice for the cloud path. */
+const CLOUD_VOICE_MAP: Record<string, string> = {
+  "en-US-AvaNeural": "nova",
+  "en-US-JennyNeural": "nova",
+  "en-US-AnaNeural": "nova",
+  "en-US-AriaNeural": "shimmer",
+  "en-US-EmmaNeural": "shimmer",
+  "en-US-MichelleNeural": "shimmer",
+  "en-US-BrianNeural": "onyx",
+  "en-US-ChristopherNeural": "onyx",
+  "en-US-EricNeural": "onyx",
+  "en-US-GuyNeural": "onyx",
+  "en-US-RogerNeural": "onyx",
+  "en-US-SteffanNeural": "onyx",
+  "en-US-AndrewNeural": "onyx",
+  "zh-CN-XiaoxiaoNeural": "nova",
+  "zh-CN-XiaoyiNeural": "nova",
+  "zh-CN-YunxiaNeural": "nova",
+  "zh-CN-YunjianNeural": "onyx",
+  "zh-CN-YunxiNeural": "onyx",
+  "zh-CN-YunyangNeural": "onyx",
+};
+
+/** Map a companion voice id onto an OpenAI TTS voice (default alloy). */
+export function mapCloudVoice(voice: string): string {
+  return CLOUD_VOICE_MAP[voice] || "alloy";
+}
+
 export const TTS_VOICES = new Set([
   // English
   "en-US-AnaNeural",

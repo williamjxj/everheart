@@ -11,7 +11,12 @@ import { generatePersona, GRADIENTS } from "@/lib/offline/persona";
 import { offlineCard } from "@/lib/offline/creation-fallback";
 import { CharacterCardSchema } from "@/types/character-card";
 import { cleanForSpeech } from "@/lib/tts";
-import { splitSentences, splitStreamBuffer } from "@/lib/speech";
+import {
+  chunkSpeechText,
+  cleanSpeechText,
+  splitSentences,
+  splitStreamBuffer,
+} from "@/lib/speech";
 import {
   extractFactsRuleBased,
   extractEntitiesRuleBased,
@@ -108,6 +113,32 @@ test("splitStreamBuffer keeps the trailing partial fragment", () => {
   );
   assert.deepEqual(complete, ["Hello there.", "How are you?"]);
   assert.equal(rest, " I'm doing");
+});
+
+test("cleanSpeechText strips narration but keeps emphasis and links", () => {
+  assert.equal(cleanSpeechText("*He smiles.* Hello **friend**."), "Hello friend.");
+  assert.equal(
+    cleanSpeechText("Read [the docs](https://example.com) now"),
+    "Read the docs now"
+  );
+  // Markers are stripped but the heading/quote text is still spoken.
+  assert.equal(cleanSpeechText("# Title\n> quote `code`"), "Title quote code");
+  assert.equal(cleanSpeechText("A  B   C"), "A B C");
+  // A single-asterisk action inside a sentence is removed, not spoken.
+  assert.equal(cleanSpeechText('"Got it" — *she nods.*'), '"Got it" —');
+});
+
+test("chunkSpeechText keeps sentence boundaries and stays under the limit", () => {
+  assert.deepEqual(chunkSpeechText("One. Two. Three!", 1600), [
+    "One.",
+    "Two.",
+    "Three!",
+  ]);
+  const long = "很".repeat(500);
+  const chunks = chunkSpeechText(long, 100);
+  assert.ok(chunks.length >= 5, "long CJK text must be split");
+  assert.ok(chunks.every((c) => c.length <= 100), "every chunk stays under limit");
+  assert.equal(chunks.join(""), long, "splitting must not lose text");
 });
 
 console.log("companion memory");
