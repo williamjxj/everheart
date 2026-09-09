@@ -26,6 +26,8 @@ import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/m
 import { bundleForQuery } from "@/lib/memory/retrieval";
 import { parseCompanionMd, serializeCompanionMd, CompanionData } from "@/lib/cards/md";
 import { CharacterCardSchema } from "@/types/character-card";
+import { listCompanions, getCompanionMd, putCompanionMd, deleteCompanionMd } from "@/lib/companions/store";
+import "fake-indexeddb/auto";
 
 let failures = 0;
 const pending: Promise<void>[] = [];
@@ -133,6 +135,20 @@ test("serialize -> parse round-trips a CompanionData", () => {
   assert.deepEqual(parsed.card.tags, data.card.tags);
   const ok = CharacterCardSchema.safeParse(parsed.card);
   assert.equal(ok.success, true, ok.success ? "" : ok.error.message);
+});
+
+console.log("companion store");
+
+test("put/list/get/delete round-trip in IndexedDB", async () => {
+  const putMd = "---\nid: user-1\nname: Test\n---\n\n# Test";
+  await putCompanionMd("user-1", putMd);
+  const list = await listCompanions();
+  assert.ok(list.some((e) => e.id === "user-1"), "entry appears in list");
+  assert.equal(list.find((e) => e.id === "user-1")?.md, putMd);
+  const got = await getCompanionMd("user-1");
+  assert.equal(got, putMd);
+  await deleteCompanionMd("user-1");
+  assert.equal(await getCompanionMd("user-1"), null);
 });
 
 console.log("offline brain");
