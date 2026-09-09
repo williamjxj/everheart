@@ -122,3 +122,74 @@ export function parseCompanionMd(text: string): CompanionData {
     voice: voice && voice.en ? voice : undefined,
   };
 }
+
+const SECTION_PRESENTATION: [SectionKey, string][] = [
+  ["personality", "性格"],
+  ["description", "简介"],
+  ["backstory", "背景"],
+  ["scenario", "场景"],
+  ["first_mes", "开场白"],
+  ["mes_example", "对话范例"],
+  ["relationshipDynamic", "关系动态"],
+  ["kinks", "癖好"],
+  ["limits", "界限"],
+];
+
+function yamlValue(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map((x) => String(x)).join(", ")}]`;
+  if (typeof v === "number") return String(v);
+  if (v === true) return "true";
+  if (v === false) return "false";
+  if (typeof v === "object" && v !== null) return JSON.stringify(v);
+  return String(v);
+}
+
+export function serializeCompanionMd(data: CompanionData): string {
+  const ec = data.card.everheart;
+  const frontmatter: Record<string, unknown> = {
+    id: data.id,
+    name: data.name,
+    age: ec?.age ?? 18,
+    isNsfw: ec?.isNsfw ?? data.isNsfw,
+  };
+  if (data.card.tags?.length) frontmatter.tags = data.card.tags;
+  if (data.voice) {
+    frontmatter.voice = {
+      en: data.voice.en,
+      zh: data.voice.zh,
+      ...(data.voice.rate ? { rate: data.voice.rate } : {}),
+      ...(data.voice.local ? { local: data.voice.local } : {}),
+    };
+  }
+  if (data.portraitUrl) frontmatter.portraitUrl = data.portraitUrl;
+  if (data.homePortraitUrl) frontmatter.alternateUrl = data.homePortraitUrl;
+
+  const fmYaml = Object.entries(frontmatter)
+    .map(([k, v]) => `${k}: ${yamlValue(v)}`)
+    .join("\n");
+
+  const body: string[] = [`# ${data.name}`];
+  const content: Record<SectionKey, string> = {
+    personality: data.card.personality ?? "",
+    description: data.card.description ?? "",
+    backstory: "",
+    scenario: data.card.scenario ?? "",
+    first_mes: data.card.first_mes ?? "",
+    mes_example: data.card.mes_example ?? "",
+    relationshipDynamic: ec?.relationshipDynamic ?? "",
+    kinks: ec?.kinks?.length ? ec.kinks.map((k) => `- ${k}`).join("\n") : "",
+    limits: ec?.limits?.length ? ec.limits.map((l) => `- ${l}`).join("\n") : "",
+  };
+
+  for (const [key, zh] of SECTION_PRESENTATION) {
+    const value = content[key];
+    if (!value.trim()) continue;
+    if (key === "mes_example") {
+      body.push(`## ${zh} ${key}`, "```", value, "```", "");
+    } else {
+      body.push(`## ${zh} ${key}`, value, "");
+    }
+  }
+
+  return `---\n${fmYaml}\n---\n\n${body.join("\n").trim()}\n`;
+}

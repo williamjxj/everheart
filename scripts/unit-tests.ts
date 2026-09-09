@@ -24,7 +24,7 @@ import {
 } from "@/lib/memory/fact-extractor";
 import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
 import { bundleForQuery } from "@/lib/memory/retrieval";
-import { parseCompanionMd, serializeCompanionMd } from "@/lib/cards/md";
+import { parseCompanionMd, serializeCompanionMd, CompanionData } from "@/lib/cards/md";
 import { CharacterCardSchema } from "@/types/character-card";
 
 let failures = 0;
@@ -98,6 +98,41 @@ You step through a shimmering portal into the Whispering Archives.
   // Round-trip: the card is the runtime contract
   const parsed = CharacterCardSchema.safeParse(data.card);
   assert.equal(parsed.success, true, parsed.success ? "" : parsed.error.message);
+});
+
+test("serialize -> parse round-trips a CompanionData", () => {
+  const data: CompanionData = {
+    id: "user-test",
+    name: "Test",
+    isNsfw: false,
+    portraitUrl: "/companions/test/portrait.png",
+    homePortraitUrl: "/companions/test/alternate.png",
+    voice: { en: "en-US-AriaNeural", zh: "zh-CN-XiaoxiaoNeural", rate: "+0%", local: { en: "af_heart", zh: "zf_xiaobei" } },
+    card: {
+      spec: "chara_card_v2",
+      spec_version: "2.0",
+      name: "Test",
+      description: "A friendly test companion with a heart of gold and a very long history.",
+      personality: "Warm, curious, slightly mischievous, always ready with a joke.",
+      scenario: "A warm room with a crackling fire.",
+      first_mes: "*She smiles.* Welcome — make yourself at home.",
+      mes_example: "{{user}}: Hi!\n{{char}}: Hello there!",
+      tags: ["test"],
+      everheart: { age: 20, isNsfw: false },
+    },
+  };
+  const md = serializeCompanionMd(data);
+  const parsed = parseCompanionMd(md);
+  assert.equal(parsed.id, data.id);
+  assert.equal(parsed.name, data.name);
+  assert.equal(parsed.isNsfw, data.isNsfw);
+  assert.equal(parsed.voice?.en, data.voice?.en);
+  assert.equal(parsed.homePortraitUrl, data.homePortraitUrl);
+  assert.equal(parsed.card.description, data.card.description);
+  assert.equal(parsed.card.mes_example, data.card.mes_example);
+  assert.deepEqual(parsed.card.tags, data.card.tags);
+  const ok = CharacterCardSchema.safeParse(parsed.card);
+  assert.equal(ok.success, true, ok.success ? "" : ok.error.message);
 });
 
 console.log("offline brain");
