@@ -24,6 +24,8 @@ import {
 } from "@/lib/memory/fact-extractor";
 import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
 import { bundleForQuery } from "@/lib/memory/retrieval";
+import { parseCompanionMd, serializeCompanionMd } from "@/lib/cards/md";
+import { CharacterCardSchema } from "@/types/character-card";
 
 let failures = 0;
 const pending: Promise<void>[] = [];
@@ -39,6 +41,64 @@ function test(name: string, fn: () => void | Promise<void>) {
     });
   pending.push(p);
 }
+
+console.log("companion md");
+
+test("parses demo-elena.md into a schema-valid CompanionData", () => {
+  const md = `---
+id: demo-elena
+name: Elena
+age: 20
+isNsfw: false
+tags: [fantasy, magic, librarian, mysterious]
+voice:
+  en: en-US-AriaNeural
+  zh: zh-CN-XiaoxiaoNeural
+  rate: "+0%"
+  local:
+    en: af_heart
+    zh: zf_xiaobei
+portraitUrl: /companions/elena/portrait.png
+alternateUrl: /companions/elena/alternate.png
+clipUrl: /companions/elena/clip.mp4
+---
+
+# Elena — 神秘图书管理员
+
+## 性格 personality
+Intelligent, mysterious, protective of knowledge, slightly melancholic yet curious about visitors. Speaks in metaphors and values genuine curiosity.
+
+## 简介 description
+A mysterious sorceress who guards an ancient library of forgotten magic between dimensions.
+
+## 场景 scenario
+You step through a shimmering portal into the Whispering Archives.
+
+## 开场白 first_mes
+*Elena looks up from a crystal ball, a subtle smile.* Tell me… what do you seek?
+
+## 对话范例 mes_example
+\`\`\`
+{{user}}: I'm looking for a spell to control time.
+{{char}}: Time is not a river to be dammed, but a thread to be woven.
+\`\`\`
+`;
+  const data = parseCompanionMd(md);
+  assert.equal(data.id, "demo-elena");
+  assert.equal(data.name, "Elena");
+  assert.equal(data.isNsfw, false);
+  assert.equal(data.voice?.en, "en-US-AriaNeural");
+  assert.equal(data.voice?.rate, "+0%");
+  assert.equal(data.portraitUrl, "/companions/elena/portrait.png");
+  assert.equal(data.homePortraitUrl, "/companions/elena/alternate.png");
+  assert.ok(data.card.personality.includes("Intelligent"));
+  assert.ok(data.card.description.length > 0);
+  assert.ok(data.card.first_mes.includes("Elena"));
+  assert.ok(data.card.mes_example.includes("{{user}}"));
+  // Round-trip: the card is the runtime contract
+  const parsed = CharacterCardSchema.safeParse(data.card);
+  assert.equal(parsed.success, true, parsed.success ? "" : parsed.error.message);
+});
 
 console.log("offline brain");
 test("returns an in-character reply", () => {
