@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompanionData } from "@/lib/cards/md";
 import { saveUserCompanion } from "@/lib/companions/registry";
+import {
+  inferGender,
+  voiceForCharacter,
+} from "@/lib/tts/gender-voice";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -38,6 +42,17 @@ export default function CreatePage() {
       const newCard = data.card;
       setCard(newCard);
 
+      // Voice comes from the server's gender-aware picker (fallback: infer
+      // from the card text) so male characters never default to a female TTS.
+      const voice =
+        data.voice ??
+        voiceForCharacter(
+          newCard.name,
+          inferGender(
+            `${newCard.description ?? ""} ${newCard.personality ?? ""} ${newCard.system_prompt ?? ""}`
+          )
+        );
+
       // Save as companion md into IndexedDB (single source of truth for user-owned characters)
       const id = `user-${Date.now()}`;
       const companion: CompanionData = {
@@ -46,6 +61,7 @@ export default function CreatePage() {
         card: newCard,
         isNsfw: !!nsfw,
         portraitUrl: null,
+        voice,
       };
 
       try {
@@ -82,7 +98,29 @@ export default function CreatePage() {
               method: "POST",
             });
             const pdata = await pr.json();
-            if (pr.ok && pdata.portraitUrl) setPortraitUrl(pdata.portraitUrl);
+            if (pr.ok && pdata.portraitUrl) {
+              setPortraitUrl(pdata.portraitUrl);
+              // The roster reads user companions from their IndexedDB md, so
+              // persist the generated portrait there too — otherwise the new
+              // character shows a letter avatar instead of the logo.
+              const withPortrait: CompanionData = {
+                ...companion,
+                portraitUrl: pdata.portraitUrl,
+              };
+              try {
+                await saveUserCompanion(withPortrait);
+              } catch (err) {
+                console.warn("[create] portrait save to IndexedDB failed", err);
+                try {
+                  const raw = localStorage.getItem("everheart_companions");
+                  const list = raw ? JSON.parse(raw) : [];
+                  const idx = list.findIndex((c: any) => c.id === id);
+                  if (idx >= 0) list[idx] = withPortrait;
+                  else list.unshift(withPortrait);
+                  localStorage.setItem("everheart_companions", JSON.stringify(list));
+                } catch {}
+              }
+            }
           } catch {
             /* portrait optional — chat still works without it */
           }

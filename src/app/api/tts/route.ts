@@ -18,6 +18,7 @@
 
 import { createHash } from "node:crypto";
 import { execFile, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -91,11 +92,19 @@ async function localServerAlive(): Promise<boolean> {
 async function ensureLocalServer(): Promise<boolean> {
   if (await localServerAlive()) return true;
   const python = pickPython();
+  if (!existsSync(python)) {
+    // Missing venv (e.g. .venv-tts not installed) — report unavailable
+    // instead of crashing the process with an unhandled spawn error.
+    return false;
+  }
   const child = spawn(
     python,
     [join(ROOT, "scripts", "tts_local_server.py"), "--port", String(LOCAL_TTS_PORT)],
     { cwd: ROOT, detached: true, stdio: "ignore" },
   );
+  // Swallow spawn errors (bad interpreter, permissions, …); the health poll
+  // below decides whether the server actually came up.
+  child.on("error", () => {});
   child.unref();
   const deadline = Date.now() + 25_000;
   while (Date.now() < deadline) {

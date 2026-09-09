@@ -57,6 +57,7 @@ export const CharacterCardSchema = z.object({
     .object({
       age: z.number(),
       isNsfw: z.boolean(),
+      gender: z.string().optional(),
       kinks: z.array(z.string()).optional(),
       limits: z.array(z.string()).optional(),
       relationshipDynamic: z.string().optional(),

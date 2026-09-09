@@ -17,6 +17,11 @@ import {
   CharacterCard,
 } from "@/types/character-card";
 import { createDeepSeekClient, MODEL_LADDER } from "./deepseek";
+import {
+  genderNoun,
+  inferGender,
+  normalizeGender,
+} from "@/lib/tts/gender-voice";
 
 async function callJsonStage<T>(
   client: ReturnType<typeof createDeepSeekClient>,
@@ -71,7 +76,7 @@ Output ONLY valid JSON matching this shape:
 {
   "name": string,
   "age": number (must be 18+),
-  "gender": string (optional),
+  "gender": "male" | "female" | "nonbinary" (required),
   "personality": string (rich, 2-4 sentences),
   "speechStyle": string,
   "backstory": string,
@@ -91,7 +96,15 @@ Extra notes: ${input.extraNotes || "none"}
 
 Make the character feel alive and consistent.`;
 
-  return callJsonStage(client, system, user, PersonaBriefSchema);
+  const persona = await callJsonStage<PersonaBrief>(
+    client,
+    system,
+    user,
+    PersonaBriefSchema
+  );
+  const normalized = normalizeGender(persona.gender) ?? inferGender(JSON.stringify(persona));
+  if (normalized) persona.gender = normalized;
+  return persona;
 }
 
 /** Stage 2 – Scenario seeds + first message */
@@ -151,7 +164,13 @@ export function compileCard(
   dialogue: DialogueStyle,
   input: CreationInput
 ): CharacterCard {
+  const gender =
+    normalizeGender(persona.gender) ??
+    inferGender(
+      [persona.appearance, persona.personality, persona.backstory, persona.relationshipDynamic].join(" ")
+    );
   const description = [
+    `${persona.name} is a ${persona.age}-year-old ${genderNoun(gender)}.`,
     persona.appearance || "",
     persona.backstory,
     `Personality: ${persona.personality}`,
@@ -176,6 +195,7 @@ export function compileCard(
     everheart: {
       age: persona.age,
       isNsfw: input.nsfw,
+      gender: gender ?? undefined,
       kinks: persona.kinks,
       limits: persona.limits,
       relationshipDynamic: persona.relationshipDynamic,

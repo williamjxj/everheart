@@ -146,7 +146,9 @@ everheart/
 7. Test pipeline: `DEEPSEEK_API_KEY=... pnpm pipeline:test`
 8. Voice: install the local Kokoro fallback once
    (`python3 -m venv .venv-tts && .venv-tts/bin/pip install kokoro soundfile onnxruntime "misaki[zh]"`);
-   set `TTS_ENGINE=local` to prefer it, or keep `auto` (edge first)
+   set `EVERHEART_TTS_MODE=local` to force local voices, or keep `auto`
+   (edge → local Kokoro → cloud). Use Python 3.12 if the wheels fail to build
+   on the default `python3`.
 9. Portraits: run ComfyUI on http://127.0.0.1:8188, then
    `node scripts/generate-companion-portraits.mjs` (all) or
    `node scripts/generate-companion-portraits.mjs --companion <id>` (single)

@@ -6,18 +6,21 @@
 
 import { generatePersona } from "./persona";
 import type { CharacterCard, CreationInput } from "@/types/character-card";
+import { genderNoun, normalizeGender } from "@/lib/tts/gender-voice";
 
 export function offlineCard(input: CreationInput): CharacterCard {
   const persona = generatePersona({
     archetype: input.archetype,
     vibe: input.vibe,
   });
+  const gender = normalizeGender(persona.gender);
 
   return {
     spec: "chara_card_v2",
     spec_version: "2.0",
     name: persona.name,
     description: [
+      `${persona.name} is a ${persona.age}-year-old ${genderNoun(gender)}.`,
       persona.backstory,
       `Personality: ${persona.personality.join(", ")}`,
       `Speech: ${persona.speechStyle}`,
@@ -35,6 +38,7 @@ export function offlineCard(input: CreationInput): CharacterCard {
     everheart: {
       age: persona.age,
       isNsfw: false,
+      gender: gender ?? undefined,
       relationshipDynamic: persona.tagline,
     },
   };

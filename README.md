@@ -67,7 +67,8 @@ See `.env.example`.
 5. **Card Import/Export** – V2/V3 JSON + PNG metadata support (basic)
 6. **18+ AgeGate** – NSFW companions are gated behind an age confirmation
    (demo; replace with real identity verification before production)
-7. **Character portraits** – 8 demo companions with locally generated
+7. **Character portraits** – 10 demo companions (Elena, Kai, Lyra, Mira,
+   Dante, Yuna, Cassian, Nova, Sienna, Raven) with locally generated
    portraits (ComfyUI) in `public/companions/` (portrait + alternate + a 3s
    Ken Burns video clip each). Regenerate with:
    `node scripts/generate-companion-portraits.mjs` (requires ComfyUI on
@@ -75,7 +76,7 @@ See `.env.example`.
    18+ companions can opt into a dedicated NSFW workflow
    (`"workflow": "nsfw"` in `companions.json`, using the
    epicrealism Natural Sin checkpoint) so their portraits are genuinely
-   adult-only — Lyra is wired this way.
+   adult-only — Lyra, Sienna, and Raven are wired this way.
 8. **Voice chat (EN / 中文)** – every companion speaks: `/api/tts` renders
    replies with Microsoft neural voices via `uvx edge-tts` (per-companion
    en/zh voice + rate, cached by content hash). The chat input has a mic
@@ -89,7 +90,9 @@ See `.env.example`.
    links, and code keep their text). Requires `uvx` and internet access to
    Microsoft's TTS service. Long replies are chunked per sentence, and
    over-long sentences are split so every TTS request stays under the provider
-   limit.
+   limit. UI-created companions get a gender-matched en/zh/local voice
+   (male/female pools chosen at creation); older characters missing a voice
+   are repaired automatically by the registry on load.
 9. **Streaming speech + subtitles** – replies are spoken sentence-by-sentence
    as they stream in (no waiting for the full reply), and the currently spoken
    sentence is highlighted inside the bubble. Clips are synthesized *ahead* of
@@ -107,11 +110,14 @@ See `.env.example`.
    ```
 
    The first local generation downloads the Kokoro-82M model (needs network
-   once); afterwards it works fully offline. Set `TTS_ENGINE=local` to prefer
-   local voices, or keep `auto` (edge first, local fallback).
+   once); afterwards it works fully offline. Set `EVERHEART_TTS_MODE=local`
+   to force local voices, or keep `auto` (edge → local → cloud fallback).
+   On macOS the Homebrew `python3` can be too new for the Kokoro wheels —
+   create `.venv-tts` with Python 3.12 if the install fails.
 10. **Characters as Markdown (SOUL.md)** – every companion is one
-    hand-editable Markdown file (the single source of truth): the 8 bundled
-    demos live in `public/companions/demo-*.md`, and user-created characters
+    hand-editable Markdown file (the single source of truth): the bundled
+    demo companions (currently 10) live next to their portraits in `public/companions/<name>/demo-<name>.md`
+    (e.g. `public/companions/mira/demo-mira.md`), and user-created characters
     are saved as md in IndexedDB (`user-*.md`). The home showcase and chat
     load the roster from the md registry (bundled + IndexedDB merged at
     runtime, bundled md precached offline); created companions are also
@@ -131,8 +137,12 @@ See `.env.example`.
     always know who you're talking to.
 12. **Auto portrait for created companions** – the create flow generates a
     portrait with the local ComfyUI (`POST /api/companions/:id/portrait`,
-    reusing `scripts/comfyui/workflow-portrait.json`) and persists it to
-    `eh_companion.portraitUrl`; chat/home pick it up automatically.
+    reusing `scripts/comfyui/workflow-portrait.json`), writes it to
+    `public/companions/<id>/portrait.png`, builds the matching 3s Ken Burns
+    clip (`portrait.mp4`), and persists the URL both to `eh_companion` and
+    back into the companion's IndexedDB md so chat/home pick it up
+    automatically. Portrait prompts are gender-explicit ("a man / a woman")
+    so the generated face matches the character.
 13. **PWA / offline** – the app is installable on mobile (web app manifest,
     PNG + maskable icons, apple-touch icon) and a service worker precaches the
     app shell plus every demo chat page. Companion portraits are cached at

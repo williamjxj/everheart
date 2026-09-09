@@ -34,6 +34,10 @@ import {
 } from "@/lib/speech";
 import type { CompanionData } from "@/lib/cards/md";
 import { loadAllCompanions } from "@/lib/companions/registry";
+import {
+  inferGender,
+  voiceForCharacter,
+} from "@/lib/tts/gender-voice";
 
 interface Message {
   id: string;
@@ -138,9 +142,19 @@ export default function ChatPage() {
    *  Retries once before giving up. */
   const synthClip = useCallback(
     async (text: string, c: CompanionData, lang: "en" | "zh") => {
-      const voice = c.voice?.[lang] || (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
-      const rate = c.voice?.rate || "+0%";
-      const localVoice = c.voice?.local?.[lang] || "";
+      const fallbackVoice = voiceForCharacter(
+        c.name,
+        inferGender(
+          `${c.card?.description ?? ""} ${c.card?.personality ?? ""} ${c.card?.system_prompt ?? ""}`
+        )
+      );
+      const voice =
+        c.voice?.[lang] ||
+        fallbackVoice[lang] ||
+        (lang === "zh" ? "zh-CN-XiaoxiaoNeural" : "en-US-AvaNeural");
+      const rate = c.voice?.rate || fallbackVoice.rate || "+0%";
+      const localVoice =
+        c.voice?.local?.[lang] || fallbackVoice.local?.[lang] || "";
       let lastErr: unknown;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {

@@ -26,7 +26,9 @@ SillyTavern JSON card 只是 md 的**运行时派生视图**，不再是真相�
    新增**手动**一键导出为可读 markdown（USER.md 快照），便于备份/迁移。
 3. **全浏览器存储** —— 演示角色：仓库内的 md 随包下发（PWA 预缓存）；
    用户创建/拥有的角色：md 全文存 IndexedDB（可导出下载）。无登录、无 DB 依赖。
-4. **演示角色 md 手写** —— 8 个演示角色的 md 放 `companions/` 目录，人工维护，
+4. **演示角色 md 手写** —— 10 个演示角色（Elena / Kai / Lyra / Mira / Dante /
+   Yuna / Cassian / Nova / Sienna / Raven）的 md 放
+   `public/companions/<slug>/demo-<slug>.md`，与肖像同目录，人工维护，
    不从 `demo-companions.ts` 生成。`demo-companions.ts` 退役或被 md 驱动。
 5. **单文件自包含** —— 每个角色一个 `.md`，`first_mes` / `mes_example` 等长文
    也写在正文内，不拆分 sidecar。一个文件 = 一个可移植制品。
@@ -37,13 +39,19 @@ SillyTavern JSON card 只是 md 的**运行时派生视图**，不再是真相�
 
 ```
 companions/
-├── elena.md
-├── kai.md
-├── lyra.md
-└── ...（8 个演示角色 + 后续模板）
+├── elena/
+│   └── demo-elena.md
+├── kai/
+│   └── demo-kai.md
+├── lyra/
+│   └── demo-lyra.md
+└── ...（10 个演示角色，md 与其肖像同目录 + 后续模板）
 ```
 
 命名：`<companion-id>.md`，id 即现有 companion 的 slug（如 `demo-elena`、`elena`）。
+演示角色的 md 与其肖像资源放在同一角色目录下：
+`companions/<slug>/demo-<slug>.md`（对应 `public/companions/`，运行时 URL 为
+`/companions/<slug>/demo-<slug>.md`）。
 
 ### 3.2 结构：frontmatter（结构化）+ 正文（散文）
 
@@ -57,10 +65,10 @@ tags: [mysterious, bookworm, mentor]
 voice:
   en: en-US-AriaNeural
   zh: zh-CN-XiaoxiaoNeural
-  rate: 1.0
+  rate: "+0%"
 portraitUrl: /companions/elena/portrait.png
 alternateUrl: /companions/elena/alternate.png
-clipUrl: /companions/elena/clip.mp4
+clipUrl: /companions/elena/portrait.mp4
 ---
 
 # Elena — 神秘图书管理员
@@ -103,6 +111,13 @@ Elena: 因为雨声让人专注？我也这么觉得……
 
 - **frontmatter**（YAML，经 `gray-matter` 解析）只放机器关键字段：
   `id` / `name` / `age` / `isNsfw` / `tags` / `voice` / 三个资源 URL。
+- **voice 与性别一致** —— 演示角色手写 voice；UI 创建角色时按 card 的
+  `everheart.gender`（male/female/nonbinary）从 `src/lib/tts/gender-voice.ts`
+  的男/女 voice 池分配 en/zh/local 三套声音。旧用户角色缺 voice 时由
+  `registry` 加载时自动补全，避免男性角色落到女性默认声音。
+- **用户角色肖像** —— UI 创建的角色在 IndexedDB 存 md，肖像生成后把
+  `portraitUrl` 写回 md，并在 `public/companions/<id>/` 下生成
+  `portrait.png` + `portrait.mp4`（该目录为运行时数据，已 gitignore）。
 - **正文**用 `## <中文名> <english-key>` 二级标题分节，`english-key` 是解析锚点
   （跨语言稳定），中文名是给人看的。
 - 固定分节顺序：`personality` → `description` → `backstory` → `scenario` →
@@ -127,7 +142,7 @@ md.serialize(card: CharacterCard): string      // card → md（用于用户创�
   聊天 / TTS / 记忆 / 肖像管线**零改动**。
 
 ```
-companions/*.md (bundled) 或 IndexedDB (用户创建)
+public/companions/<slug>/demo-<slug>.md (bundled) 或 IndexedDB (用户创建)
     → md.ts 解析 (gray-matter + 分节 → CharacterCardSchema)
     → companion registry (bundled + 用户创建合并)
     → 现有管线: card + memory bundle → /api/chat（不变）✓
@@ -137,16 +152,16 @@ companions/*.md (bundled) 或 IndexedDB (用户创建)
 
 | 来源 | 物理存放 | 生命周期 |
 |---|---|---|
-| 8 个演示角色 | 仓库 `companions/*.md`（随包，PWA service worker 预缓存） | 只读，随版本升级 |
-| 用户创建/拥有的角色 | **IndexedDB** 存 md 全文（单 object store，按 id 索引） | 用户完全拥有 |
+| 10 个演示角色 | 仓库 `public/companions/<slug>/demo-<slug>.md` + 肖像/视频（随包，PWA 预缓存） | 只读，随版本升级 |
+| 用户创建/拥有的角色 | **IndexedDB** 存 md 全文（单 object store，按 id 索引）；肖像运行时生成在 `public/companions/<id>/`（gitignore） | 用户完全拥有 |
 | 导出 | 下载 `<id>.md`（`Blob` + `URL.createObjectURL`） | 可移植、可备份、可分享 |
 
 - IndexedDB 封装：`src/lib/companions/store.ts`，提供 `list / get / put / delete`。
 - registry：`src/lib/companions/registry.ts`，合并 bundled（静态导入/预缓存）+ IndexedDB
-  用户角色，优先用户角色（同名覆盖）。
+  用户角色，优先用户角色（同名覆盖）；用户角色缺 `portraitUrl`/`voice` 时自动补全。
 - **Supabase `eh_companion` 彻底退出聊天主路径**。它保留为"市场/公开展示"的未来
   通道，不在本设计中做任何改动。
-- PWA 预缓存清单加入 `companions/*.md`（离线可用）。
+- PWA 预缓存清单加入 `public/companions/<slug>/demo-<slug>.md`（离线可用）。
 
 ## 6. 记忆（USER.md 那半）与导出
 
@@ -168,10 +183,10 @@ companions/*.md (bundled) 或 IndexedDB (用户创建)
 
 ## 8. 迁移
 
-1. 手写 8 个演示角色的 `companions/*.md`（内容取自现有 `demo-companions.ts` 的 card
-   + `CompanionData` 的 voice / portrait 配置）。
+1. 手写 10 个演示角色的 `public/companions/<slug>/demo-<slug>.md`
+   （内容取自现有 `demo-companions.ts` 的 card + `CompanionData` 的 voice / portrait 配置）。
 2. `demo-companions.ts` 由"数据源"降级为"兼容层"（读 md 结果）或直接删除引用点，
-   新增 `companions/*.md` 为唯一演示数据源。
+   新增 `public/companions/<slug>/demo-<slug>.md` 为唯一演示数据源。
 3. `scripts/seed-companions-db.ts` 改为从 md 生成的 card 种库（仅当需要保留 DB 同步时；
    主路径不需要）。
 4. 既有 localStorage 记忆 key 不动，用户已产生的记忆不受影响。
@@ -180,14 +195,14 @@ companions/*.md (bundled) 或 IndexedDB (用户创建)
 
 ```
 新增:
-  companions/*.md                          # 8 个演示角色（手写）
+  public/companions/<slug>/demo-<slug>.md  # 10 个演示角色（手写，与肖像同目录）
   src/lib/cards/md.ts                      # md ↔ CharacterCard（gray-matter + zod）
   src/lib/companions/store.ts              # IndexedDB 封装
   src/lib/companions/registry.ts           # bundled + 用户角色合并
   src/components/chat/MemoryExportButton.tsx  # 记忆手动导出
 改动:
   src/lib/demo-companions.ts               # 改读 md 或移除
-  public/sw.js                            # 预缓存 companions/*.md
+  public/sw.js                            # 预缓存 demo-*.md（各角色目录内）
   src/app/api/companions/route.ts          # （可选）改为 md 驱动 / 保持现状
 ```
 

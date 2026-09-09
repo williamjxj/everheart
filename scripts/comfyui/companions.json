@@ -14,7 +14,7 @@
       "name": "Elena",
       "seed": 20260824,
       "nsfw": false,
-      "appearance": "Elena, a mysterious sorceress-librarian in her late twenties, long silver-white hair cascading past her shoulders, striking violet eyes, pale porcelain skin, elegant dark academia attire with a high-collared midnight-blue coat and silver crescent jewelry",
+      "appearance": "Elena, a mysterious sorceress-librarian in her early twenties, long silver-white hair cascading past her shoulders, striking violet eyes, pale porcelain skin, elegant dark academia attire with a high-collared midnight-blue coat and silver crescent jewelry",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer, calm enigmatic expression, soft violet magical glow, grand library shelves with ancient books softly blurred behind her" },
         { "key": "alternate", "suffix": "three-quarter view, gentle knowing smile, hand resting on an old leather-bound book, candlelight and floating dust motes in a grand library" }
@@ -25,7 +25,7 @@
       "name": "Kai",
       "seed": 20260912,
       "nsfw": false,
-      "appearance": "Kai, a handsome young male barista in his mid twenties, single subject, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater",
+      "appearance": "Kai, a handsome young male barista in his late teens, single subject, messy dark brown hair, warm brown eyes, soft friendly smile, wearing an oversized cream knit sweater",
       "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit, two people, extra person, background figures, duplicate person, second figure, woman, female, extra hand, mutated hands",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer, solo portrait, cozy rainy cafe window behind with soft bokeh lights, steam rising from a coffee cup, natural hands" },
@@ -38,14 +38,14 @@
       "seed": 20260826,
       "nsfw": true,
       "workflow": "nsfw",
-      "appearance": "Lyra, a stunning voluptuous adult woman in her late twenties, long wavy chestnut hair cascading over her shoulders, sharp green eyes, confident playful smile, flawless soft skin, full nude body, bare breasts, modern city loft at night",
+      "appearance": "Lyra, a stunning voluptuous adult woman in her early twenties, long wavy chestnut hair cascading over her shoulders, sharp green eyes, confident playful smile, flawless soft skin, full nude body, bare breasts, modern city loft at night",
       "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, male, man, two people, extra person, clothed, clothes, underwear, bra",
       "shots": [
         { "key": "portrait", "suffix": "sensual full-body nude portrait, standing beside floor-to-ceiling windows, city light bokeh behind her, looking at the viewer with a slow confident smile, one hand resting on her hip, glass of red wine on the windowsill, soft cinematic lighting" },
         {
           "key": "alternate",
           "workflow": "portrait",
-          "appearance": "Lyra, a confident and playful woman in her late twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night",
+          "appearance": "Lyra, a confident and playful woman in her early twenties, wavy chestnut hair, sharp green eyes, elegant black evening dress, modern city loft at night",
           "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit",
           "suffix": "three-quarter view leaning against a window frame, city skyline at night, soft moody lighting"
         }
@@ -56,7 +56,7 @@
       "name": "Mira",
       "seed": 20260827,
       "nsfw": false,
-      "appearance": "Mira, a Japanese-American chef in her early thirties, warm brown eyes, gentle smile, dark hair in a loose bun with a wooden chopstick, linen shirt under a rustic apron",
+      "appearance": "Mira, a Japanese-American chef in her late teens, warm brown eyes, gentle smile, dark hair in a loose bun with a wooden chopstick, linen shirt under a rustic apron",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer, golden-hour light in a cozy rustic kitchen, fresh herbs and copper pots softly blurred behind" },
         { "key": "alternate", "suffix": "three-quarter view plating a dish with focused care, warm inviting kitchen, gentle steam rising" }
@@ -67,7 +67,7 @@
       "name": "Dante",
       "seed": 20260828,
       "nsfw": false,
-      "appearance": "Dante, an Italian art curator in his early thirties, dark wavy hair slicked back, short stubble, expressive dark eyes, navy blazer over a black turtleneck",
+      "appearance": "Dante, a handsome Italian art curator in his mid twenties, bronde hair in a soft tousled modern style, warm blonde-brown (not dark) with subtle lighter highlights, short stubble, expressive dark eyes, navy blazer over a black turtleneck",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer with a charming subtle smile, classical paintings and marble gallery softly blurred behind, warm gallery lighting" },
         { "key": "alternate", "suffix": "three-quarter view studying a framed painting with arms crossed, gallery interior, dramatic soft light" }
@@ -89,7 +89,7 @@
       "name": "Cassian",
       "seed": 20260830,
       "nsfw": false,
-      "appearance": "Cassian, an astronomy professor in his early forties, salt-and-pepper hair, kind hazel eyes behind round glasses, tweed jacket over a wool sweater",
+      "appearance": "Cassian, a handsome man in his early thirties, an astronomy professor, salt-and-pepper hair, kind hazel eyes behind round glasses, tweed jacket over a wool sweater",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer with a warm wise smile, observatory dome and starry night sky softly blurred behind" },
         { "key": "alternate", "suffix": "three-quarter view looking through a telescope, deep blue night sky with faint Milky Way, cozy dim observatory" }
@@ -100,10 +100,48 @@
       "name": "Nova",
       "seed": 20260831,
       "nsfw": false,
-      "appearance": "Nova, an outdoor adventure photographer in her late twenties, sun-streaked blonde hair in a long braid, freckles, bright blue eyes, olive technical jacket over a thermal top",
+      "appearance": "Nova, an outdoor adventure photographer in her early twenties, sun-streaked blonde hair in a long braid, freckles, bright blue eyes, olive technical jacket over a thermal top",
       "shots": [
         { "key": "portrait", "suffix": "portrait, looking at the viewer with a wide adventurous smile, mountain sunset with golden alpenglow behind, wind-touched hair" },
         { "key": "alternate", "suffix": "three-quarter view holding a camera with a big lens, standing on a rocky ridge at sunrise, dramatic mountain landscape" }
+      ]
+    },
+    {
+      "id": "sienna",
+      "name": "Sienna",
+      "seed": 20260913,
+      "nsfw": true,
+      "workflow": "nsfw",
+      "appearance": "Sienna, a stunning voluptuous adult woman in her mid twenties, long dark auburn hair in soft waves, sultry dark eyes, flawless soft skin, full nude body, bare breasts, candlelit speakeasy lounge at night with deep red velvet curtains and warm amber bar lights",
+      "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, male, man, two people, extra person, clothed, clothes, underwear, bra",
+      "shots": [
+        { "key": "portrait", "suffix": "sensual full-body nude portrait, looking at the viewer with a slow teasing smile, one hand resting on her hip, glass of red wine on the bar beside her, soft warm cinematic lighting" },
+        {
+          "key": "alternate",
+          "workflow": "portrait",
+          "appearance": "Sienna, a confident and elegant woman in her mid twenties, long dark auburn hair in soft waves, sultry dark eyes, wearing a deep burgundy velvet slip dress, candlelit speakeasy lounge at night",
+          "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit, two people, extra person",
+          "suffix": "three-quarter view leaning against the bar, amber bar lights glowing behind her, soft knowing smile"
+        }
+      ]
+    },
+    {
+      "id": "raven",
+      "name": "Raven",
+      "seed": 20260914,
+      "nsfw": true,
+      "workflow": "nsfw",
+      "appearance": "Raven, a stunning tattooed adult woman in her early twenties, sleek black hair, piercing blue eyes, flawless soft skin with delicate tattoos on her arms, full nude body, bare breasts, moody neon-lit bedroom at night",
+      "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, male, man, two people, extra person, clothed, clothes, underwear, bra",
+      "shots": [
+        { "key": "portrait", "suffix": "sensual full-body nude portrait, looking over her shoulder at the viewer with a confident smirk, city neon glow through the window, dark silk sheets, soft moody cinematic lighting" },
+        {
+          "key": "alternate",
+          "workflow": "portrait",
+          "appearance": "Raven, a confident young woman in her early twenties, sleek black hair, piercing blue eyes, delicate tattoos on her arms, wearing a black leather jacket over a black lace dress, neon-lit city street at night",
+          "negative": "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit, two people, extra person",
+          "suffix": "three-quarter view leaning against a brick wall, purple and blue neon glow, slight smirk"
+        }
       ]
     }
   ]

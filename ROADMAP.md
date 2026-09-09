@@ -6,20 +6,21 @@
 - [x] 角色创建 Pipeline（多阶段 LLM）
 - [x] Chat Orchestrator + 流式 API
 - [x] **完整流式聊天页面**（侧边栏 + 消息列表 + 实时流式输出 + 停止按钮）
-- [x] **8 个演示虚拟人物**（Elena / Kai / Lyra / Mira / Dante / Yuna / Cassian / Nova）本地种子 + 首页肖像墙
+- [x] **10 个演示虚拟人物**（Elena / Kai / Lyra / Mira / Dante / Yuna / Cassian / Nova / Sienna / Raven）md 驱动 + 首页肖像墙
 - [x] localStorage 临时持久化（消息 + 伴侣列表）
 - [x] Stripe 一次性购买 + webhook 骨架
 - [x] **离线兜底引擎**（合并自 codex-everheart）：无 key 也能聊天/创建
 - [x] **18+ AgeGate**（NSFW 伴侣进入前确认；正式版换身份验证）
 - [x] **数据库迁移到 Supabase Postgres**（Prisma provider 切 postgresql，全部表 `eh_` 前缀）
-- [x] **角色肖像图**（8 个演示角色，ComfyUI 本地生成 + 微动短视频，`public/companions/`）
+- [x] **角色肖像图**（10 个演示角色，ComfyUI 本地生成 + 微动短视频，`public/companions/`）
 - [x] **语音聊天**（edge-tts 按角色音色 en/zh + 语音输入 Web Speech + 语言切换）
 - [x] **语音升级**：流式逐句播报（边出字边说话）+ 气泡字幕高亮 + 本地 Kokoro 离线音色（无网可用，edge 自动兜底）
-- [x] **角色入库**：8 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
+- [x] **角色入库**：10 个角色持久化到 Supabase `eh_companion`（对话/记忆仍留浏览器，不落库）
 - [x] **肖像进 UI**：首页角色展示墙 + 聊天侧栏/头部头像 + 悬停播放微动视频；进入聊天页后头部头像/加载页持续播放微动视频（mp4）
 - [x] **新创建角色自动生成肖像**（`/api/companions/:id/portrait` + 创建页接入）
 - [x] **README 首页截图**（`screenshots/home.png`，用 `pnpm screenshot:home` 在 dev server 上重拍）
-- [x] **NSFW 专用肖像工作流**：18+ 角色与普通角色真正区分——`workflow: "nsfw"`（epicrealism Natural Sin checkpoint），Lyra 已接入（nude/sexy/adult 提示词）
+- [x] **NSFW 专用肖像工作流**：18+ 角色与普通角色真正区分——`workflow: "nsfw"`（epicrealism Natural Sin checkpoint），Lyra / Sienna / Raven 已接入（nude/sexy/adult 提示词）
+- [x] **音色与性别一致**：UI 创建角色按 `everheart.gender` 分配男/女 voice（en/zh/local 三套），旧用户角色缺 voice 自动补全；肖像提示词显式 `a man / a woman`
 - [x] **肖像脚本增强**：`--companion <id>` 单角色重生成（保留 manifest 其余条目）+ 每角色可选 workflow
 - [x] **Kai 肖像修复**：右部多人物/手部瑕疵 → 新种子 20260912 + 单人/自然手提示词重生成（png + mp4）
 - [x] **首页公开访问安全**：18+ 角色首页展示 SFW alternate（Lyra：`alternate.png` + `alternate.mp4`），NSFW portrait 只出现在 age-gated 聊天页

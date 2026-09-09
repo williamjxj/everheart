@@ -7,11 +7,18 @@
  */
 
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { promisify } from "node:util";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
+import {
+  inferGender,
+  normalizeGender,
+} from "@/lib/tts/gender-voice";
 
+const execFileAsync = promisify(execFile);
 const COMFY_URL = process.env.COMFY_URL || "http://127.0.0.1:8188";
 const ROOT = resolve(process.cwd());
 const PUBLIC_DIR = join(ROOT, "public", "companions");
@@ -20,6 +27,36 @@ const STYLE_TAIL =
   "photorealistic, highly detailed skin texture, soft cinematic studio lighting, 85mm portrait, masterpiece";
 const NEGATIVE =
   "cartoon, anime, painting, illustration, 3d render, cgi, deformed, disfigured, extra fingers, bad hands, bad anatomy, blurry, low quality, jpeg artifacts, watermark, text, logo, nude, explicit";
+
+/** Build the same 3s Ken Burns clip the demo companions use (best-effort). */
+async function buildClip(pngPath: string, mp4Path: string): Promise<void> {
+  await execFileAsync(
+    "ffmpeg",
+    [
+      "-y",
+      "-loglevel",
+      "error",
+      "-i",
+      pngPath,
+      "-vf",
+      "scale=1536:2304,zoompan=z='min(zoom+0.0012,1.18)':d=90:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=512x768:fps=30",
+      "-t",
+      "3",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "medium",
+      "-crf",
+      "18",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      mp4Path,
+    ],
+    { timeout: 30_000 }
+  );
+}
 
 export async function POST(
   req: NextRequest,
@@ -36,7 +73,13 @@ export async function POST(
     const appearance = String(card?.description || card?.personality || "")
       .replace(/\s+/g, " ")
       .slice(0, 400);
-    const prompt = `Portrait of ${companion.name}, ${appearance}. portrait, looking at the viewer, ${STYLE_TAIL}`;
+    const gender =
+      normalizeGender(card?.everheart?.gender) ?? inferGender(appearance);
+    const genderPhrase =
+      gender === "male" ? "a man" : gender === "female" ? "a woman" : "";
+    const prompt = `Portrait of ${companion.name}, ${
+      genderPhrase ? `${genderPhrase}, ` : ""
+    }${appearance}. portrait, looking at the viewer, ${STYLE_TAIL}`;
 
     const template = JSON.parse(await readFile(WORKFLOW_PATH, "utf8"));
     const seed = Number(
@@ -94,6 +137,14 @@ export async function POST(
     const outDir = join(PUBLIC_DIR, id);
     await mkdir(outDir, { recursive: true });
     await writeFile(join(outDir, "portrait.png"), bytes);
+    try {
+      await buildClip(join(outDir, "portrait.png"), join(outDir, "portrait.mp4"));
+    } catch (clipErr) {
+      // Clip is optional — the still portrait still works if ffmpeg is absent.
+      const clipMsg =
+        clipErr instanceof Error ? clipErr.message : String(clipErr);
+      console.warn("[portrait] clip generation skipped:", clipMsg);
+    }
 
     const portraitUrl = `/companions/${id}/portrait.png`;
     await prisma.companion.update({ where: { id }, data: { portraitUrl } });

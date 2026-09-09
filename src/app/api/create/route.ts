@@ -8,6 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { CreationInputSchema } from "@/types/character-card";
 import { runCreationPipeline } from "@/lib/llm/creation-pipeline";
 import { offlineCard } from "@/lib/offline/creation-fallback";
+import {
+  inferGender,
+  voiceForCharacter,
+} from "@/lib/tts/gender-voice";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,16 +39,30 @@ export async function POST(req: NextRequest) {
         "[create] LLM pipeline unavailable — using offline fallback:",
         err?.message || err
       );
+      const card = offlineCard(parsed.data);
       return NextResponse.json({
         success: true,
-        card: offlineCard(parsed.data),
+        card,
+        voice: voiceForCharacter(
+          card.name,
+          card.everheart?.gender ??
+            inferGender(`${card.description} ${card.personality}`)
+        ),
         fallback: true,
       });
     }
 
+    const voice = voiceForCharacter(
+      result.card.name,
+      result.persona.gender ??
+        inferGender(
+          `${result.card.description} ${result.card.personality} ${result.card.system_prompt ?? ""}`
+        )
+    );
     return NextResponse.json({
       success: true,
       card: result.card,
+      voice,
       // Optionally return intermediate stages for debugging
       // persona: result.persona,
       // scenarios: result.scenarios,
