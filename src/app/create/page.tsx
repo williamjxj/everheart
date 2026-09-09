@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { CompanionData } from "@/lib/cards/md";
+import { saveUserCompanion } from "@/lib/companions/registry";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -36,9 +38,9 @@ export default function CreatePage() {
       const newCard = data.card;
       setCard(newCard);
 
-      // Save into localStorage companions list
+      // Save as companion md into IndexedDB (single source of truth for user-owned characters)
       const id = `user-${Date.now()}`;
-      const companion = {
+      const companion: CompanionData = {
         id,
         name: newCard.name,
         card: newCard,
@@ -47,11 +49,17 @@ export default function CreatePage() {
       };
 
       try {
-        const raw = localStorage.getItem("everheart_companions");
-        const list = raw ? JSON.parse(raw) : [];
-        list.unshift(companion);
-        localStorage.setItem("everheart_companions", JSON.stringify(list));
-      } catch {}
+        await saveUserCompanion(companion);
+      } catch (err) {
+        console.warn("[create] save to IndexedDB failed", err);
+        // fall back to localStorage so the companion is not lost entirely
+        try {
+          const raw = localStorage.getItem("everheart_companions");
+          const list = raw ? JSON.parse(raw) : [];
+          list.unshift(companion);
+          localStorage.setItem("everheart_companions", JSON.stringify(list));
+        } catch {}
+      }
 
       // Persist the character in Supabase (dynamic chats stay in the browser),
       // then generate a portrait with the local ComfyUI.
