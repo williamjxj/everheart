@@ -33,12 +33,7 @@ import {
   splitStreamBuffer,
 } from "@/lib/speech";
 import type { CompanionData } from "@/lib/cards/md";
-import { getBundledDemoCompanionIds } from "@/lib/companions/registry";
-
-// TODO(Task 10): load the roster from the md registry
-// (getBundledDemoCompanionIds → loadAllCompanions).
-// Stubbed empty while demo-companions.ts is retired.
-const DEMO_COMPANIONS: CompanionData[] = [];
+import { loadAllCompanions } from "@/lib/companions/registry";
 
 interface Message {
   id: string;
@@ -71,23 +66,6 @@ function speechQueueLimits(
 }
 
 
-
-// Demo seed companions (localStorage fallback when no DB yet)
-
-
-function loadCompanions(): CompanionData[] {
-  if (typeof window === "undefined") return DEMO_COMPANIONS;
-  try {
-    const stored = localStorage.getItem("everheart_companions");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  // Seed demo data
-  localStorage.setItem("everheart_companions", JSON.stringify(DEMO_COMPANIONS));
-  return DEMO_COMPANIONS;
-}
 
 /** Map a companion's static portrait to its 3s Ken Burns clip when available. */
 function portraitVideoUrl(portraitUrl?: string | null) {
@@ -346,34 +324,13 @@ export default function ChatPage() {
     resetSpeech();
   }, [resetSpeech]);
 
-  // Load companions + current companion + history
+  // Load companions from the md registry (bundled demos + IndexedDB user files)
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Characters come from Supabase (eh_companion); fall back to the local
-      // roster when the API is unavailable. Conversations stay in the browser.
-      let roster: CompanionData[] = [];
-      try {
-        const res = await fetch("/api/companions");
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.companions) && data.companions.length > 0) {
-            // DB rows don't carry the per-companion voice config; inherit it
-            // from the bundled roster so voices/rates stay per-character.
-            roster = data.companions.map((c: CompanionData) => ({
-              ...c,
-              voice:
-                c.voice ??
-                DEMO_COMPANIONS.find((d) => d.id === c.id)?.voice,
-            }));
-          }
-        }
-      } catch {
-        /* offline → local roster */
-      }
+      const list = await loadAllCompanions();
       if (cancelled) return;
 
-      const list = roster.length > 0 ? roster : loadCompanions();
       setCompanions(list);
       const found = list.find((c) => c.id === companionId) || null;
       setCompanion(found);
@@ -586,7 +543,7 @@ export default function ChatPage() {
   }, []);
 
   if (loading) {
-    const known = DEMO_COMPANIONS.find((c) => c.id === companionId);
+    const known = companions.find((c) => c.id === companionId);
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
         <div className="text-center space-y-5">
