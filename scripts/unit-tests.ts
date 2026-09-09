@@ -26,16 +26,18 @@ import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/m
 import { bundleForQuery } from "@/lib/memory/retrieval";
 
 let failures = 0;
+const pending: Promise<void>[] = [];
 
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`  ok - ${name}`);
-  } catch (err) {
-    failures += 1;
-    console.error(`  FAIL - ${name}`);
-    console.error(err);
-  }
+function test(name: string, fn: () => void | Promise<void>) {
+  const p = Promise.resolve()
+    .then(fn)
+    .then(() => console.log(`  ok - ${name}`))
+    .catch((err) => {
+      failures += 1;
+      console.error(`  FAIL - ${name}`);
+      console.error(err);
+    });
+  pending.push(p);
 }
 
 console.log("offline brain");
@@ -193,8 +195,10 @@ test("episodic condensation produces a summary + keywords", () => {
   assert.ok(ep.keywords.includes("banff"));
 });
 
-if (failures > 0) {
-  console.error(`\n${failures} test(s) failed`);
-  process.exit(1);
-}
-console.log("\nAll tests passed");
+Promise.all(pending).then(() => {
+  if (failures > 0) {
+    console.error(`\n${failures} test(s) failed`);
+    process.exit(1);
+  }
+  console.log("\nAll tests passed");
+});
