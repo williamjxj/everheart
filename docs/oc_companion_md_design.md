@@ -1,6 +1,6 @@
 # Everheart — Companion Markdown (SOUL.md) Design Spec
 
-**Date:** 2026-09-08 · **Status:** Draft for review · **Author:** OpenCode (oc_)
+**Date:** 2026-09-08 · **Status:** Implemented (2026-09-08) · **Author:** OpenCode (oc_)
 
 ## 1. Vision
 
