@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getBundledDemoCompanionIds } from "@/lib/companions/registry";
+import { loadAllCompanions } from "@/lib/companions/registry";
 import type { CompanionData } from "@/lib/cards/md";
 
-// TODO(Task 11): load the showcase roster from the md registry
-// (getBundledDemoCompanionIds → loadAllCompanions → setState).
-// Stubbed empty so the homepage compiles while demo-companions.ts is retired.
-const DEMO_COMPANIONS: CompanionData[] = [];
-
 export default function HomePage() {
+  const [companions, setCompanions] = useState<CompanionData[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAllCompanions().then((list) => {
+      if (!cancelled) setCompanions(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -42,10 +48,10 @@ export default function HomePage() {
         <section className="mt-16">
           <div className="flex items-end justify-between mb-6">
             <h2 className="text-2xl font-semibold">遇见你的伴侣</h2>
-            <span className="text-sm text-zinc-500">{DEMO_COMPANIONS.length} 位角色</span>
+            <span className="text-sm text-zinc-500">{companions.length} 位角色</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {DEMO_COMPANIONS.map((c) => (
+            {companions.map((c) => (
             <Link
               key={c.id}
               href={`/chat/${c.id}`}
