@@ -2,7 +2,7 @@
  * Precache the app shell (home + all demo chat routes) and runtime-cache
  * static assets and companion portraits so the app keeps working offline.
  */
-const CACHE_NAME = "everheart-v1";
+const CACHE_NAME = "everheart-v2";
 
 const PRECACHE_URLS = [
   "/",
@@ -20,6 +20,14 @@ const PRECACHE_URLS = [
   "/icons/icon-512.png",
   "/icons/maskable-512.png",
   "/icons/apple-touch-icon.png",
+  "/companions/demo-elena.md",
+  "/companions/demo-kai.md",
+  "/companions/demo-lyra.md",
+  "/companions/demo-mira.md",
+  "/companions/demo-dante.md",
+  "/companions/demo-yuna.md",
+  "/companions/demo-cassian.md",
+  "/companions/demo-nova.md",
 ];
 
 self.addEventListener("install", (event) => {
