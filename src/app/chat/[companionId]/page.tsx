@@ -710,6 +710,8 @@ export default function ChatPage() {
             {showMemory && memory && (
               <MemoryPanel
                 memory={memory}
+                companionName={companion?.name ?? ""}
+                companionId={companion?.id ?? ""}
                 onClear={() => {
                   clearMemory(companionId);
                   const fresh = emptyMemory();

@@ -1,14 +1,22 @@
 "use client";
 
 import type { CompanionMemory } from "@/lib/memory/memory-store";
+import MemoryExportButton from "@/components/chat/MemoryExportButton";
 
 interface MemoryPanelProps {
   memory: CompanionMemory;
+  companionName: string;
+  companionId: string;
   onClear: () => void;
 }
 
 /** Collapsible view of what the companion remembers (facts, entities, episodes). */
-export function MemoryPanel({ memory, onClear }: MemoryPanelProps) {
+export function MemoryPanel({
+  memory,
+  companionName,
+  companionId,
+  onClear,
+}: MemoryPanelProps) {
   const empty =
     memory.userProfile.length === 0 &&
     memory.entities.length === 0 &&
@@ -18,12 +26,19 @@ export function MemoryPanel({ memory, onClear }: MemoryPanelProps) {
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 backdrop-blur p-4 mb-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-bold text-sm">🧠 记忆</h3>
-        <button
-          onClick={onClear}
-          className="text-xs text-zinc-500 hover:text-rose-300 transition"
-        >
-          清空记忆
-        </button>
+        <div className="flex items-center gap-2">
+          <MemoryExportButton
+            memory={memory}
+            companionName={companionName}
+            companionId={companionId}
+          />
+          <button
+            onClick={onClear}
+            className="text-xs text-zinc-500 hover:text-rose-300 transition"
+          >
+            清空记忆
+          </button>
+        </div>
       </div>
 
       {empty ? (

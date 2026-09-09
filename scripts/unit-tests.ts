@@ -23,6 +23,7 @@ import {
   condenseEpisodeLocal,
 } from "@/lib/memory/fact-extractor";
 import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
+import { serializeMemoryToMd } from "@/lib/memory/export";
 import { bundleForQuery } from "@/lib/memory/retrieval";
 import { parseCompanionMd, serializeCompanionMd, CompanionData } from "@/lib/cards/md";
 import { listCompanions, getCompanionMd, putCompanionMd, deleteCompanionMd } from "@/lib/companions/store";
@@ -333,6 +334,23 @@ test("episodic condensation produces a summary + keywords", () => {
   ]);
   assert.ok(ep.summary.includes("Banff"));
   assert.ok(ep.keywords.includes("banff"));
+});
+
+console.log("memory export");
+
+test("serializeMemoryToMd renders facts/entities/episodes sections", () => {
+  const m = emptyMemory();
+  addFacts(m, ["User likes hiking on weekends", "User is a nurse"]);
+  upsertEntity(m, "Buddy", "User's dog");
+  pushEpisode(m, "Planned a Banff hiking trip together.", ["hiking", "banff"]);
+  const md = serializeMemoryToMd(m, "Elena");
+  assert.ok(md.includes("# Elena 的记忆"));
+  assert.ok(md.includes("## Facts"));
+  assert.ok(md.includes("User likes hiking"));
+  assert.ok(md.includes("## Entities"));
+  assert.ok(md.includes("Buddy"));
+  assert.ok(md.includes("## Episodes"));
+  assert.ok(md.includes("Banff"));
 });
 
 Promise.all(pending).then(() => {
