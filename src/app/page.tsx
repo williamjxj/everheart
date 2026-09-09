@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { DEMO_COMPANIONS } from "@/lib/demo-companions";
+import { getBundledDemoCompanionIds } from "@/lib/companions/registry";
+import type { CompanionData } from "@/lib/cards/md";
+
+// TODO(Task 11): load the showcase roster from the md registry
+// (getBundledDemoCompanionIds → loadAllCompanions → setState).
+// Stubbed empty so the homepage compiles while demo-companions.ts is retired.
+const DEMO_COMPANIONS: CompanionData[] = [];
 
 export default function HomePage() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);

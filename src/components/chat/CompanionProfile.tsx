@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CompanionData } from "@/lib/demo-companions";
+import type { CompanionData } from "@/lib/cards/md";
 
 interface CompanionProfileProps {
   companion: CompanionData;

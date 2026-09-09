@@ -32,7 +32,13 @@ import {
   cleanSpeechText,
   splitStreamBuffer,
 } from "@/lib/speech";
-import { CompanionData, DEMO_COMPANIONS } from "@/lib/demo-companions";
+import type { CompanionData } from "@/lib/cards/md";
+import { getBundledDemoCompanionIds } from "@/lib/companions/registry";
+
+// TODO(Task 10): load the roster from the md registry
+// (getBundledDemoCompanionIds → loadAllCompanions).
+// Stubbed empty while demo-companions.ts is retired.
+const DEMO_COMPANIONS: CompanionData[] = [];
 
 interface Message {
   id: string;

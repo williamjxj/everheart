@@ -25,9 +25,9 @@ import {
 import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
 import { bundleForQuery } from "@/lib/memory/retrieval";
 import { parseCompanionMd, serializeCompanionMd, CompanionData } from "@/lib/cards/md";
-import { CharacterCardSchema } from "@/types/character-card";
 import { listCompanions, getCompanionMd, putCompanionMd, deleteCompanionMd } from "@/lib/companions/store";
 import "fake-indexeddb/auto";
+import { saveUserCompanion, loadAllCompanions, deleteUserCompanion } from "@/lib/companions/registry";
 
 let failures = 0;
 const pending: Promise<void>[] = [];
@@ -149,6 +149,35 @@ test("put/list/get/delete round-trip in IndexedDB", async () => {
   assert.equal(got, putMd);
   await deleteCompanionMd("user-1");
   assert.equal(await getCompanionMd("user-1"), null);
+});
+
+console.log("companion registry");
+
+test("loadAllCompanions merges user companion over bundled by id", async () => {
+  const demoId = "demo-elena";
+  const userCard: CompanionData = {
+    id: demoId,
+    name: "Elena (custom)",
+    isNsfw: false,
+    card: {
+      spec: "chara_card_v2",
+      spec_version: "2.0",
+      name: "Elena (custom)",
+      description: "A custom overwrite of the demo librarian with a much longer backstory to satisfy schema.",
+      personality: "Friendly and warm, very approachable, always smiling.",
+      scenario: "A cozy bookstore at noon.",
+      first_mes: "*She waves.* Hey! Over here.",
+      mes_example: "{{user}}: Hi\n{{char}}: Hey hey!",
+      tags: ["custom"],
+      everheart: { age: 21, isNsfw: false },
+    },
+  };
+  await saveUserCompanion(userCard);
+  const all = await loadAllCompanions();
+  const found = all.find((c) => c.id === demoId);
+  assert.ok(found, "demo-elena present");
+  assert.equal(found?.name, "Elena (custom)", "user version wins");
+  await deleteUserCompanion(demoId);
 });
 
 console.log("offline brain");

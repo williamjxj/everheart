@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "../src/lib/db/client";
-import { DEMO_COMPANIONS } from "../src/lib/demo-companions";
+import { DEMO_COMPANION_FILES, loadAllCompanions } from "../src/lib/companions/registry";
 
 const DEMO_USER_ID = "demo-user";
 
@@ -21,7 +21,8 @@ async function main() {
     },
   });
 
-  for (const c of DEMO_COMPANIONS) {
+  const companions = await loadAllCompanions();
+  for (const c of companions) {
     const data = {
       name: c.name,
       cardJson: c.card,
