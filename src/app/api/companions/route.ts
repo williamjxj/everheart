@@ -2,8 +2,13 @@
  * GET  /api/companions -> { companions: [...] } (persisted characters only)
  * POST /api/companions -> upsert a companion { id?, name, card, isNsfw?, portraitUrl? }
  *
- * Characters (roster) live in Supabase `eh_companion`. Dynamic conversation
- * data (messages / memory) intentionally stays in the browser.
+ * Characters (roster) live in Supabase `eh_companion`, still under the shared
+ * `demo-user` because auth is not wired up yet.
+ *
+ * Conversation data is no longer browser-only: messages are written to
+ * `eh_message` by /api/chat and memory lives in the `eh_memory_*` / `eh_summary`
+ * tables, both keyed by the caller's anonymous `playerId` (see
+ * docs/memory-plan.md P1). This route only manages the roster.
  */
 
 import { NextRequest, NextResponse } from "next/server";

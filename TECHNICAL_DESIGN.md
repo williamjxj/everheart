@@ -20,6 +20,10 @@ Next.js App Router
   ├── /api/tts             → speech (edge-tts → local Kokoro fallback)
   ├── /api/companions      → roster (Supabase eh_companion)
   ├── /api/companions/:id/portrait → on-demand ComfyUI portrait
+  ├── /api/companions/:id/messages → server-side chat history
+  ├── /api/memory          → per-player memory: GET / PUT / DELETE, plus
+  │                          /api/memory/extract (facts + rolling summary),
+  │                          /api/memory/fact (forget one), /api/memory/export
   ├── /api/entitlements/*  → Stripe checkout + webhook
   └── pages (create, chat/[companionId], pricing, success; homepage gallery)
         │
@@ -56,7 +60,9 @@ User message
   → Persist messages + new facts
 ```
 
-Memory is hybrid: rolling summary + facts (pgvector after Postgres) + structured relationship facts.
+Memory is hybrid: a rolling summary + durable facts + entity memory + episodic
+segments, retrieved by lexical similarity with importance and recency weighting
+(no vector store yet) and persisted per (player, companion) in Postgres.
 
 ## 5. Monetization (MVP)
 
@@ -162,17 +168,26 @@ prefetched playback, long-sentence chunking, and silence-trimmed clips (only
 `*...*` narration is stripped from voice), continuous STT, markdown/emoji
 bubbles, companion intro card + blurred video backdrop, favicon, AgeGate.
 Companion memory (facts / entities / episodes with importance+recency
-retrieval, visible via the 🧠 panel) is client-side and offline-first.
+retrieval, visible via the 🧠 panel) is server-persisted and offline-first:
+Supabase is the durable copy, `localStorage` is the mirror that keeps the
+offline brain working. Anonymous `playerId` stands in for auth for now.
+
+Done since this draft: message history and memory now live in Postgres
+(`eh_message`, `eh_memory_fact` / `eh_memory_entity` / `eh_memory_episode`,
+`eh_summary`), with privacy endpoints (`/api/memory*`) and JSON / Markdown
+exports. Vector retrieval is deliberately deferred — lexical recall is enough
+at current fact counts (`docs/memory-plan.md` §3 P3).
 
 Still to do:
-1. Auth (Clerk or NextAuth) + protect API routes
-2. Real DeepSeek key + model tiering / BYOK routing
-3. Persist memory to DB (`eh_memory_fact` + `eh_summary`, pgvector later)
-4. Credit balance check before LLM calls
-5. Real age verification (Veriff / Stripe Identity) replacing the checkbox gate
-6. Stripe test mode + success page (checkout/webhook exist)
-7. Cloud portrait workers (fal / Replicate) for scale
-8. Serve NSFW assets behind an authed route (they currently live in `public/`;
+1. Auth (Clerk or NextAuth) + protect API routes; migrate `playerId` rows onto
+   real user ids
+2. Model tiering / BYOK routing (the DeepSeek client and `MODEL_LADDER` exist,
+   but every tier still resolves to one model)
+3. Credit balance check before LLM calls
+4. Real age verification (Veriff / Stripe Identity) replacing the checkbox gate
+5. Stripe test mode + success page (checkout/webhook exist)
+6. Cloud portrait workers (fal / Replicate) for scale
+7. Serve NSFW assets behind an authed route (they currently live in `public/`;
    the public homepage already shows SFW alternates for 18+ roles)
 
 ## 10. Later (phase 2+)

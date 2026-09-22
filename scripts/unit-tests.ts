@@ -21,10 +21,19 @@ import {
   extractFactsRuleBased,
   extractEntitiesRuleBased,
   condenseEpisodeLocal,
+  isFillerTurn,
 } from "@/lib/memory/fact-extractor";
-import { emptyMemory, addFacts, upsertEntity, pushEpisode } from "@/lib/memory/memory-store";
+import {
+  emptyMemory,
+  addFacts,
+  upsertEntity,
+  pushEpisode,
+  applyLlmDelta,
+} from "@/lib/memory/memory-store";
 import { serializeMemoryToMd } from "@/lib/memory/export";
-import { bundleForQuery } from "@/lib/memory/retrieval";
+import { bundleForQuery, factsForPrompt, boundaryFacts } from "@/lib/memory/retrieval";
+import { shouldSummarize } from "@/lib/memory/context-assembler";
+import { sanitizePlayerId } from "@/lib/auth/player-id";
 import { parseCompanionMd, serializeCompanionMd, CompanionData } from "@/lib/cards/md";
 import { listCompanions, getCompanionMd, putCompanionMd, deleteCompanionMd } from "@/lib/companions/store";
 import "fake-indexeddb/auto";
@@ -351,6 +360,97 @@ test("serializeMemoryToMd renders facts/entities/episodes sections", () => {
   assert.ok(md.includes("Buddy"));
   assert.ok(md.includes("## Episodes"));
   assert.ok(md.includes("Banff"));
+});
+
+console.log("memory prompt selection");
+
+test("factsForPrompt keeps user boundaries ahead of recalled facts", () => {
+  const m = emptyMemory();
+  addFacts(m, [
+    "User likes hiking on weekends",
+    "Boundary: don't call the user 哥哥",
+    "User works as a nurse",
+  ]);
+
+  // Query matches nothing: boundaries must still make it into the prompt.
+  const unmatched = factsForPrompt(m, bundleForQuery(m, "zzzz").facts);
+  assert.equal(unmatched[0], "Boundary: don't call the user 哥哥");
+  assert.equal(unmatched.length, 1);
+
+  // Query matches a fact: boundary stays first, recalled fact follows.
+  const matched = factsForPrompt(m, bundleForQuery(m, "what about hiking?").facts);
+  assert.equal(matched[0], "Boundary: don't call the user 哥哥");
+  assert.ok(matched.some((f) => f.includes("hiking")));
+});
+
+test("factsForPrompt dedupes and respects the cap", () => {
+  const m = emptyMemory();
+  addFacts(m, ["Boundary: no pet names", "User likes tea"]);
+  const out = factsForPrompt(m, ["Boundary: no pet names", "User likes tea", "User likes tea"], 10);
+  assert.deepEqual(out, ["Boundary: no pet names", "User likes tea"]);
+
+  const capped = factsForPrompt(m, ["User likes tea"], 1);
+  assert.deepEqual(capped, ["Boundary: no pet names"]);
+});
+
+test("boundaryFacts detects only boundary-prefixed facts", () => {
+  const m = emptyMemory();
+  addFacts(m, ["Boundary: don't swear", "User is from Osaka", "boundary: no spoilers"]);
+  assert.deepEqual(boundaryFacts(m), ["Boundary: don't swear", "boundary: no spoilers"]);
+});
+
+console.log("memory llm delta");
+
+test("applyLlmDelta merges facts without mutating the input", () => {
+  const m = emptyMemory();
+  addFacts(m, ["User likes tea"]);
+  const merged = applyLlmDelta(m, { facts: ["User has a dog named Rex"] });
+
+  assert.equal(m.userProfile.length, 1); // input untouched
+  assert.equal(merged.userProfile.length, 2);
+  assert.ok(merged.userProfile.some((f) => f.text.includes("Rex")));
+});
+
+test("applyLlmDelta stores a summary and arms the next fold window", () => {
+  const m = emptyMemory();
+  m.messageCount = 25;
+  const summary = "The user and Elena have been planning a Banff trip and the user dislikes being called 哥哥.";
+  const merged = applyLlmDelta(m, { facts: [], summary });
+
+  assert.equal(merged.summary, summary);
+  assert.equal(merged.lastSummaryAt, 25);
+  // A fresh fold is only due after another full window.
+  assert.equal(shouldSummarize(merged.messageCount, merged.lastSummaryAt), false);
+  assert.equal(shouldSummarize(merged.messageCount + 20, merged.lastSummaryAt), true);
+});
+
+test("applyLlmDelta ignores no-op deltas and stub summaries", () => {
+  const m = emptyMemory();
+  m.summary = "Existing summary long enough to be kept.";
+  assert.equal(applyLlmDelta(m, { facts: [] }), m);
+  assert.equal(applyLlmDelta(m, { facts: [], summary: "ok" }), m);
+});
+
+test("isFillerTurn flags pleasantries but not fact-dense short messages", () => {
+  for (const t of ["ok", "Thanks!", "哈哈", "在吗？", "嗯嗯"]) {
+    assert.equal(isFillerTurn(t), true, `${t} should be filler`);
+  }
+  for (const t of ["我叫小明", "my name is Sam", "I have a dog named Rex"]) {
+    assert.equal(isFillerTurn(t), false, `${t} should not be filler`);
+  }
+});
+
+console.log("player identity");
+
+test("sanitizePlayerId accepts uuids and rejects junk", () => {
+  const uuid = "3f2504e0-4f89-11d3-9a0c-0305e82c3301";
+  assert.equal(sanitizePlayerId(uuid), uuid);
+  assert.equal(sanitizePlayerId("  " + uuid + "  "), uuid);
+  assert.equal(sanitizePlayerId("p-abc12345"), "p-abc12345");
+
+  for (const bad of ["", "short", "has space", "semi;colon", "quote'", "a".repeat(65), null, undefined]) {
+    assert.equal(sanitizePlayerId(bad), null, `${String(bad)} should be rejected`);
+  }
 });
 
 Promise.all(pending).then(() => {

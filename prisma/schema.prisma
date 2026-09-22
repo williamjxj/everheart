@@ -25,6 +25,10 @@ model User {
   companions        Companion[]
   messages          Message[]
   ledgerEntries     LedgerEntry[]
+  memoryFacts       MemoryFact[]
+  memoryEntities    MemoryEntity[]
+  memoryEpisodes    MemoryEpisode[]
+  summaries         Summary[]
   openRouterKeyEnc  String?        // encrypted BYOK LLM key (DeepSeek; never store plain)
 
   @@map("eh_user")
@@ -60,6 +64,9 @@ model Companion {
 
   messages      Message[]
   memories      MemoryFact[]
+  memoryEntities MemoryEntity[]
+  memoryEpisodes MemoryEpisode[]
+  summaries     Summary[]
 
   @@index([userId])
 
@@ -78,31 +85,88 @@ model Message {
   createdAt     DateTime @default(now())
 
   @@index([companionId, createdAt])
+  // Per-user history reads (chat page reload, Phase P1).
+  @@index([userId, companionId, createdAt])
 
   @@map("eh_message")
 }
 
+/// One durable fact the companion remembers about this user.
 model MemoryFact {
-  id            String                      @id @default(cuid())
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   companionId   String
-  companion     Companion                   @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  companion     Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
   fact          String
-  embedding     Bytes?   // SQLite stand-in; restore pgvector(1536) when switching to Postgres
   importance    Float                       @default(0.5)
+  /// "fact" | "boundary" — boundaries are always injected into the prompt.
+  category      String                      @default("fact")
   createdAt     DateTime                    @default(now())
+  /// Mirrors `MemoryItem.lastUsedAt` on the client (used by recency ranking).
   lastAccessed  DateTime                    @default(now())
 
-  @@index([companionId])
+  @@index([userId, companionId])
 
   @@map("eh_memory_fact")
 }
 
+/// A named person/thing the companion knows about ("Rex: user's dog").
+model MemoryEntity {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companionId  String
+  companion    Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  name         String
+  note         String   @default("")
+  importance   Float    @default(0.5)
+  lastSeenAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId, companionId])
+
+  @@map("eh_memory_entity")
+}
+
+/// A compacted past conversation segment (episodic memory).
+model MemoryEpisode {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companionId  String
+  companion    Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  summary      String
+  /// Space-separated keywords (client sends string[]).
+  keywords     String   @default("")
+  importance   Float    @default(0.5)
+  startAt      DateTime @default(now())
+  endAt        DateTime @default(now())
+
+  @@index([userId, companionId])
+
+  @@map("eh_memory_episode")
+}
+
+/// Rolling summary + counters. One row per (user, companion): it doubles as the
+/// header record for that companion's memory (counters exist before the first
+/// summary is produced, hence the defaults).
 model Summary {
   id            String   @id @default(cuid())
-  companionId   String   @unique
-  content       String
-  messageCount  Int
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companionId   String
+  companion     Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  content       String   @default("")
+  /// Exchanges seen so far (CompanionMemory.messageCount).
+  messageCount  Int      @default(0)
+  /// messageCount at the last summary fold (CompanionMemory.lastSummaryAt).
+  lastSummaryAt Int      @default(0)
+  /// CompanionMemory schema version (client owns the shape).
+  version       Int      @default(2)
   updatedAt     DateTime @updatedAt
+
+  @@unique([userId, companionId])
 
   @@map("eh_summary")
 }

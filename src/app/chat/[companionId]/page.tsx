@@ -12,6 +12,7 @@ import {
 import { CompanionProfile } from "@/components/chat/CompanionProfile";
 import { MemoryPanel } from "@/components/chat/MemoryPanel";
 import {
+  applyLlmDelta,
   addFacts,
   clearMemory,
   emptyMemory,
@@ -21,7 +22,9 @@ import {
   upsertEntity,
   type CompanionMemory,
 } from "@/lib/memory/memory-store";
-import { bundleForQuery } from "@/lib/memory/retrieval";
+import { bundleForQuery, factsForPrompt } from "@/lib/memory/retrieval";
+import { shouldSummarize } from "@/lib/memory/context-assembler";
+import { getPlayerId } from "@/lib/auth/player-id";
 import {
   condenseEpisodeLocal,
   extractEntitiesRuleBased,
@@ -113,6 +116,13 @@ export default function ChatPage() {
   const [showMemory, setShowMemory] = useState(false);
   const [memory, setMemory] = useState<CompanionMemory | null>(null);
 
+  /** Latest memory, readable from async callbacks that outlive a render. */
+  const memoryRef = useRef<CompanionMemory | null>(null);
+  /** Anonymous player id (Phase P1): namespaces server-side history + memory. */
+  const playerIdRef = useRef<string>("");
+  /** Companion name for the server's memory writes (upsert padding). */
+  const companionNameRef = useRef<string>("");
+  const memorySyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -126,6 +136,14 @@ export default function ChatPage() {
   useEffect(() => {
     inputLangRef.current = inputLang;
   }, [inputLang]);
+
+  useEffect(() => {
+    memoryRef.current = memory;
+  }, [memory]);
+
+  useEffect(() => {
+    companionNameRef.current = companion?.name || "";
+  }, [companion]);
 
   const speechQueueRef = useRef<string[]>([]);
   const speechBufferRef = useRef("");
@@ -338,10 +356,78 @@ export default function ChatPage() {
     resetSpeech();
   }, [resetSpeech]);
 
+  /** Persist the whole memory blob to the server (P1). Never throws. */
+  const putMemory = useCallback(
+    async (id: string, mem: CompanionMemory) => {
+      const pid = playerIdRef.current;
+      if (!pid) return;
+      try {
+        await fetch("/api/memory", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playerId: pid,
+            companionId: id,
+            companionName: companionNameRef.current || undefined,
+            memory: mem,
+          }),
+        });
+      } catch {
+        // Offline: localStorage stays the only copy, and the next change retries.
+      }
+    },
+    []
+  );
+
+  /** Coalesce bursts of memory updates (rule-based + LLM passes) into one PUT. */
+  const queueMemorySync = useCallback(
+    (id: string, mem: CompanionMemory) => {
+      if (memorySyncTimer.current) clearTimeout(memorySyncTimer.current);
+      memorySyncTimer.current = setTimeout(() => {
+        void putMemory(id, mem);
+      }, 700);
+    },
+    [putMemory]
+  );
+
+  /**
+   * Server-first memory load:
+   *   server has memory -> adopt it (another device may be further along)
+   *   server empty, local has memory -> push local up (pre-P1 browser data)
+   *   request fails -> keep the localStorage copy (offline path)
+   */
+  const hydrateMemory = useCallback(
+    async (id: string): Promise<CompanionMemory> => {
+      const local = loadMemory(id);
+      const pid = playerIdRef.current;
+      if (!pid) return local;
+      const isPopulated = (m: CompanionMemory) =>
+        m.userProfile.length > 0 || m.entities.length > 0 || m.episodes.length > 0 || !!m.summary;
+      try {
+        const res = await fetch(
+          `/api/memory?playerId=${encodeURIComponent(pid)}&companionId=${encodeURIComponent(id)}`
+        );
+        if (!res.ok) return local;
+        const data = await res.json();
+        const remote = data?.memory as CompanionMemory | null;
+        if (remote && isPopulated(remote)) {
+          saveMemory(id, remote);
+          return remote;
+        }
+        if (isPopulated(local)) void putMemory(id, local);
+        return local;
+      } catch {
+        return local;
+      }
+    },
+    [putMemory]
+  );
+
   // Load companions from the md registry (bundled demos + IndexedDB user files)
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      playerIdRef.current = getPlayerId();
       const list = await loadAllCompanions();
       if (cancelled) return;
 
@@ -357,7 +443,40 @@ export default function ChatPage() {
         } catch {}
         setAgeOk(ageConfirmed);
 
+        // Chat history: the server is the source of truth when reachable (P1);
+        // localStorage remains the offline copy.
         let history = loadMessages(companionId);
+        const pid = playerIdRef.current;
+        if (pid) {
+          try {
+            const res = await fetch(
+              `/api/companions/${encodeURIComponent(companionId)}/messages?playerId=${encodeURIComponent(pid)}&limit=100`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              const remote: Message[] = (data.messages || []).map((m: any) => ({
+                id: String(m.id),
+                role: m.role,
+                content: String(m.content),
+              }));
+              if (remote.length) {
+                // The opening line is a client-side construct (first_mes is never
+                // persisted), so restore it when the oldest stored turn is the user's.
+                if (remote[0].role === "user" && found.card?.first_mes) {
+                  remote.unshift({
+                    id: "opening",
+                    role: "assistant",
+                    content: found.card.first_mes,
+                  });
+                }
+                history = remote;
+              }
+            }
+          } catch {
+            /* offline: keep the local copy */
+          }
+        }
+        if (cancelled) return;
         // If empty, inject first_mes as opening
         if (history.length === 0 && found.card?.first_mes) {
           history = [
@@ -367,8 +486,8 @@ export default function ChatPage() {
               content: found.card.first_mes,
             },
           ];
-          saveMessages(companionId, history);
         }
+        saveMessages(companionId, history);
         setMessages(history);
 
         // Greet with voice when the conversation is just the opening line.
@@ -383,22 +502,25 @@ export default function ChatPage() {
           }
         }
 
-        // Load persistent memory (dynamic data stays in the browser)
-        const mem = loadMemory(companionId);
+        // Memory: server first, localStorage as the offline copy.
+        const mem = await hydrateMemory(companionId);
+        if (cancelled) return;
         setMemory(mem);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [companionId, startSpeech]);
+  }, [companionId, startSpeech, hydrateMemory]);
 
   // Auto scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  /** Persist what was learned after a completed exchange (offline-first). */
+  /** Persist what was learned after a completed exchange (offline-first).
+   *  Returns the updated memory so the LLM pass below can build on it without
+   *  waiting for a re-render. */
   const rememberExchange = useCallback(
     (
       id: string,
@@ -406,7 +528,7 @@ export default function ChatPage() {
       reply: string,
       prev: CompanionMemory,
       history: Message[]
-    ) => {
+    ): CompanionMemory => {
       const next: CompanionMemory = {
         ...prev,
         updatedAt: Date.now(),
@@ -425,8 +547,60 @@ export default function ChatPage() {
       }
       saveMemory(id, next);
       setMemory(next);
+      queueMemorySync(id, next);
+      return next;
     },
-    []
+    [queueMemorySync]
+  );
+
+  /**
+   * Second memory pass, after the rule-based one: asks the server to pull out
+   * durable facts and (every full window) refresh the rolling summary.
+   *
+   * Runs after the reply has already been streamed and spoken, so it never
+   * affects latency. Any failure is swallowed — the rule-based extractor above
+   * is the offline guarantee, this is the quality upgrade.
+   */
+  const syncMemoryWithLlm = useCallback(
+    async (
+      id: string,
+      userMsg: string,
+      reply: string,
+      base: CompanionMemory,
+      history: Message[]
+    ) => {
+      const includeSummary = shouldSummarize(base.messageCount, base.lastSummaryAt);
+      try {
+        const res = await fetch("/api/memory/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userMessage: userMsg,
+            assistantReply: reply,
+            existingFacts: base.userProfile.map((f) => f.text).slice(0, 40),
+            previousSummary: base.summary || undefined,
+            recentMessages: history
+              .slice(-24)
+              .map((m) => ({ role: m.role, content: m.content })),
+            includeSummary,
+          }),
+        });
+        if (!res.ok) return;
+        const delta = await res.json();
+
+        // Merge against the freshest memory: another exchange may have landed
+        // while this request was in flight.
+        const current = memoryRef.current ?? base;
+        const merged = applyLlmDelta(current, delta);
+        if (merged === current) return;
+        saveMemory(id, merged);
+        setMemory(merged);
+        queueMemorySync(id, merged);
+      } catch {
+        // Offline, blocked, or the endpoint is down: keep the rule-based memory.
+      }
+    },
+    [queueMemorySync]
   );
 
   const sendMessage = useCallback(
@@ -458,12 +632,15 @@ export default function ChatPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            playerId: playerIdRef.current || undefined,
+            companionId,
             card: companion.card,
             messages: nextMessages.map((m) => ({
               role: m.role,
               content: m.content,
             })),
-            facts: mem.userProfile.slice(0, 10).map((f) => f.text),
+            // Boundary facts always, then recalled facts by relevance.
+            facts: factsForPrompt(mem, recalled.facts),
             summary: mem.summary || undefined,
             entities: recalled.entities,
             recalledEpisodes: recalled.recalledEpisodes,
@@ -515,8 +692,10 @@ export default function ChatPage() {
           startSpeech(companion, inputLangRef.current);
         }
 
-        // Persist memory: facts, entities, episodic condensation.
-        rememberExchange(companionId, text, full, mem, finalMessages);
+        // Persist memory: facts, entities, episodic condensation (offline path).
+        const nextMemory = rememberExchange(companionId, text, full, mem, finalMessages);
+        // Then refine with the LLM: durable facts + the rolling summary.
+        void syncMemoryWithLlm(companionId, text, full, nextMemory, finalMessages);
       } catch (err: any) {
         if (err.name === "AbortError") {
           // user cancelled
@@ -529,7 +708,7 @@ export default function ChatPage() {
         abortRef.current = null;
       }
     },
-    [companion, companionId, messages, memory, isStreaming, ageOk, resetSpeech, feedSpeechStream, startSpeech, rememberExchange]
+    [companion, companionId, messages, memory, isStreaming, ageOk, resetSpeech, feedSpeechStream, startSpeech, rememberExchange, syncMemoryWithLlm]
   );
 
   function handleStop() {
@@ -726,10 +905,47 @@ export default function ChatPage() {
                 memory={memory}
                 companionName={companion?.name ?? ""}
                 companionId={companion?.id ?? ""}
+                exportUrl={
+                  playerIdRef.current
+                    ? `/api/memory/export?playerId=${encodeURIComponent(
+                        playerIdRef.current
+                      )}&companionId=${encodeURIComponent(companionId)}`
+                    : undefined
+                }
                 onClear={() => {
                   clearMemory(companionId);
                   const fresh = emptyMemory();
                   setMemory(fresh);
+                  const pid = playerIdRef.current;
+                  if (pid) {
+                    void fetch(
+                      `/api/memory?playerId=${encodeURIComponent(pid)}&companionId=${encodeURIComponent(
+                        companionId
+                      )}`,
+                      { method: "DELETE" }
+                    ).catch(() => {});
+                  }
+                }}
+                onDeleteFact={(fact) => {
+                  const current = memoryRef.current;
+                  if (!current) return;
+                  const next: CompanionMemory = {
+                    ...current,
+                    userProfile: current.userProfile.filter((f) => f.text !== fact),
+                    updatedAt: Date.now(),
+                  };
+                  saveMemory(companionId, next);
+                  setMemory(next);
+                  const pid = playerIdRef.current;
+                  if (pid) {
+                    // Precise server-side removal; the local copy is already updated
+                    // so the next full-blob PUT cannot resurrect it.
+                    void fetch("/api/memory/fact", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ playerId: pid, companionId, fact }),
+                    }).catch(() => {});
+                  }
                 }}
               />
             )}

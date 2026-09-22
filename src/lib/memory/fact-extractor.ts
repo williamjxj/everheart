@@ -29,6 +29,19 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * Turns that cannot carry anything worth remembering ("ok", "哈哈", "在吗").
+ * Used to skip the paid LLM extraction pass on pure filler — deliberately a
+ * short explicit list rather than a length heuristic, because short Chinese
+ * messages ("我叫小明") are often the most fact-dense ones.
+ */
+const FILLER_TURN =
+  /^(?:ok(?:ay)?|k|thanks|thank you|thx|ty|hi|hey|hello|yo|lol|lmao|haha+|yes|yeah|nope|no|sure|cool|nice|bye|good night|gn|嗯+|哦+|啊+|好(?:的|吧)?|谢谢|哈哈+|呵呵|在吗|嗨|你好|收到|行|可以|是的|不要|继续)[\s!！。.~～?？,，]*$/i;
+
+export function isFillerTurn(message: string): boolean {
+  return FILLER_TURN.test(String(message || "").trim());
+}
+
 /** Durable-fact extraction without an LLM (offline path). */
 export function extractFactsRuleBased(userMessage: string): string[] {
   const facts: string[] = [];

@@ -112,6 +112,43 @@ export function clearMemory(companionId: string) {
   localStorage.removeItem(`everheart_mem_${companionId}`);
 }
 
+/**
+ * Merge an LLM-extracted delta (facts and/or a refreshed rolling summary) into
+ * memory. Pure: returns a new object and never mutates `memory`, so callers can
+ * diff or discard the result cheaply.
+ */
+export function applyLlmDelta(
+  memory: CompanionMemory,
+  delta: { facts?: string[]; summary?: string | null }
+): CompanionMemory {
+  const facts = (delta.facts || [])
+    .filter((f): f is string => typeof f === "string")
+    .map((f) => f.trim())
+    .filter(Boolean);
+  const summary = typeof delta.summary === "string" ? delta.summary.trim() : "";
+  // Ignore stub summaries ("ok", "none", ...) that small models sometimes emit.
+  const hasSummary = summary.length >= 20;
+
+  if (facts.length === 0 && !hasSummary) return memory;
+
+  const next: CompanionMemory = {
+    ...memory,
+    userProfile: memory.userProfile.map((f) => ({ ...f })),
+    entities: memory.entities.map((e) => ({ ...e })),
+    episodes: memory.episodes.map((e) => ({ ...e })),
+  };
+
+  if (facts.length > 0) addFacts(next, facts);
+  if (hasSummary) {
+    next.summary = summary.slice(0, MEMORY_LIMITS.summaryChars);
+    // Remember which exchange count this summary covered, so shouldSummarize()
+    // only fires again after another full window.
+    next.lastSummaryAt = next.messageCount;
+  }
+  next.updatedAt = Date.now();
+  return next;
+}
+
 /** Add durable facts, dedupe exact duplicates, bump importance on re-mention. */
 export function addFacts(memory: CompanionMemory, facts: string[], importance = 0.6) {
   const now = Date.now();

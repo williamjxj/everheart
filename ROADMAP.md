@@ -60,7 +60,10 @@
 ### P1 — 体验与变现
 5. Stripe 测试支付完整闭环（成功页 + 解锁 NSFW）
 6. 人像增强（当前本地 ComfyUI 生成 → 可选 fal / Replicate 云批量）
-7. 记忆真正写入 DB（`eh_memory_fact` + `eh_summary`）
+7. ~~记忆真正写入 DB（`eh_memory_fact` + `eh_summary`）~~ ✅ 已完成：
+   `eh_memory_fact` / `eh_memory_entity` / `eh_memory_episode` + `eh_summary`
+   按匿名 `playerId` 持久化，消息历史进 `eh_message`；隐私控制（单条遗忘 /
+   清空 / JSON 导出）同步完成。详见 `docs/memory-plan.md` P1–P2。
 8. 简单 18+ 验证占位（先 checkbox，后接 Veriff/Stripe Identity）
 
 ### P2 — 增长与扩展

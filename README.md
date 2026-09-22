@@ -47,10 +47,23 @@ Open http://localhost:3000 (under the platform supervisor: http://localhost:4904
 ### Database
 
 All tables live in Supabase Postgres with the `eh_` prefix (`eh_user`,
-`eh_companion`, `eh_message`, `eh_memory_fact`, `eh_summary`, `eh_entitlement`,
-`eh_ledger_entry`, `eh_character_card_template`). `DATABASE_URL` points at the
-transaction-mode pooler (6543) for runtime; `DIRECT_URL` (5432) is used by
-`prisma db push` for migrations.
+`eh_companion`, `eh_message`, `eh_memory_fact`, `eh_memory_entity`,
+`eh_memory_episode`, `eh_summary`, `eh_entitlement`, `eh_ledger_entry`,
+`eh_character_card_template`). `DATABASE_URL` points at the transaction-mode
+pooler (6543) for runtime; `DIRECT_URL` (5432) is used for schema changes.
+
+**Schema changes do not go through `prisma db push` in this project** — push
+introspects the database first, and the Supabase instance also holds another
+project's tables with a cross-schema FK (`public.dr_users` → `auth.users`),
+which fails with P4002. Prisma CLI also only reads `.env` (not `.env.local`),
+so keep a local `.env` (gitignored) alongside it. The workflow is:
+
+```bash
+cp -n .env.local .env                       # Prisma CLI reads .env only
+node --env-file=.env scripts/db-inspect.mjs # check current tables/columns/row counts
+npx prisma db execute --file prisma/sql/<migration>.sql --schema prisma/schema.prisma
+npx prisma generate
+```
 
 ### Environment Variables
 
@@ -60,8 +73,9 @@ See `.env.example`.
 
 1. **Companion Creation Pipeline** – multi-stage LLM chain producing a SillyTavern-compatible character card
    (falls back to the deterministic offline generator without a key)
-2. **Chat with Memory** – streaming replies + rolling summaries + facts (vector search after Postgres);
-   offline rule-based replies when DeepSeek is unavailable
+2. **Chat with Memory** – streaming replies + rolling summaries + facts/entities/episodes,
+   persisted in Supabase per anonymous player (see feature 14); offline rule-based replies
+   when DeepSeek is unavailable
 3. **Entitlements** – one-time license unlocks credits / features
 4. **BYOK** – bring your own DeepSeek key
 5. **Card Import/Export** – V2/V3 JSON + PNG metadata support (basic)
@@ -121,8 +135,9 @@ See `.env.example`.
     are saved as md in IndexedDB (`user-*.md`). The home showcase and chat
     load the roster from the md registry (bundled + IndexedDB merged at
     runtime, bundled md precached offline); created companions are also
-    upserted to `eh_companion`. **Dynamic conversation data (messages /
-    memory) intentionally stays in the browser and is not stored.**
+    upserted to `eh_companion`. Conversation data (messages + memory) is
+    persisted server-side per player and mirrored in `localStorage` for the
+    offline path — see feature 14.
 11. **Portraits in the UI** – the home page showcases every companion with
     their generated portrait; hovering a card or sidebar entry plays the 3s
     Ken Burns video clip, and the chat screen keeps it alive in the header
@@ -146,20 +161,35 @@ See `.env.example`.
 13. **PWA / offline** – the app is installable on mobile (web app manifest,
     PNG + maskable icons, apple-touch icon) and a service worker precaches the
     app shell plus every demo chat page. Companion portraits are cached at
-    runtime, chat history stays in `localStorage`, and the offline brain keeps
-    chatting working without a network connection. Force-enable in dev with
-    `?pwa=1`.
+    runtime, chat history and memory are mirrored in `localStorage` so the
+    offline brain keeps chatting without a network connection (the server copy
+    is authoritative when reachable), and the app keeps working with no
+    network at all. Force-enable in dev with `?pwa=1`.
 14. **Companion memory** – each companion builds a real memory of you over
     time (inspired by Hermes Agent + CrewAI): durable facts ("User likes
     hiking"), entity memory ("Buddy: User's dog"), and episodic memory
     (auto-compacted past conversations). On every message the most relevant
     facts, entities, and recalled moments are retrieved (importance + recency
     scoring) and injected into the reply context, so the companion actually
-    remembers what you told it — fully offline, stored only on your device.
-    Open the 🧠 记忆 panel in a chat to see what it remembers (or clear it).
-    The panel can also ⬇ 导出 the memory as a Markdown snapshot
-    (`<id>.memory.md`, Hermes USER.md-style) — facts, entities, episodes,
-    and the rolling summary in one portable file.
+    remembers what you told it. Since the P1 pass the memory is **stored
+    server-side** (`eh_memory_fact` / `eh_memory_entity` / `eh_memory_episode`
+    + `eh_summary`, keyed by an anonymous `playerId`) and mirrored in
+    `localStorage`, so it survives a cleared browser or another device; the
+    offline path keeps working unchanged.
+
+    - **Extraction** runs in two passes after each reply: rule-based (offline,
+      instant) and an LLM pass (`POST /api/memory/extract`) that also refreshes
+      the rolling summary every 20 exchanges. The LLM call is merged into one
+      request and only runs for turns that can carry facts (pure "ok" /
+      "哈哈"-style turns are skipped).
+    - **Boundaries** — anything you ask it to stop doing is stored with a
+      `Boundary:` prefix and always injected into the prompt, ahead of
+      relevance-ranked facts, so it can't be crowded out.
+    - Open the 🧠 记忆 panel to see what it remembers: user-set boundaries get
+      their own section and every fact has a ✕ to forget it individually.
+      "清空记忆" clears both the local and the server copy, and memory can be
+      exported as JSON (`GET /api/memory/export`) or as a Markdown snapshot
+      (`<id>.memory.md`, Hermes USER.md-style).
 
 ### Roadmap Status
 
@@ -169,10 +199,35 @@ See `.env.example`.
 - [x] Chat orchestration + memory helpers
 - [x] Stripe entitlement stubs
 - [x] 18+ AgeGate (demo confirmation)
+- [x] Server-side message + memory persistence (anonymous `playerId`; see
+      `docs/memory-plan.md` P1) — history and memory survive a cleared browser
+- [x] Memory privacy controls (forget one fact, clear, boundary section, JSON export)
+- [ ] Real auth (Clerk) — migrate `playerId` rows onto real user ids
+- [ ] Vector retrieval (deferred until lexical recall measurably falls short)
 - [ ] Full UI polish
 - [ ] Production age verification
 - [ ] Portrait / voice workers
 - [ ] Marketplace (phase 2)
+
+### Keep Supabase from pausing (free plan)
+
+Free Supabase projects pause after ~2 weeks without database activity. The
+keep-alive script touches every configured project weekly so none go idle.
+The script lives at `~/my-tools/bin/keepalive-db.mjs`. With no arguments it
+keeps both known projects alive; you can also pass one or more project
+directories to override. Each project
+reads its own `.env.local` and uses whatever credentials it has:
+everheart → Prisma `SELECT 1` via `DATABASE_URL`; jobPilot →
+PostgREST read on `jp_profiles` via `NEXT_PUBLIC_SUPABASE_URL` +
+`SUPABASE_SERVICE_ROLE_KEY`.
+
+```bash
+# one-time install (Monday 04:17, logs to /tmp/keepalive-db.log)
+(crontab -l 2>/dev/null | grep -v 'keepalive-db.mjs'; echo '17 4 * * 1 /opt/homebrew/bin/node /Users/william.jiang/my-tools/bin/keepalive-db.mjs /Users/william.jiang/my-business/everheart /Users/william.jiang/my-tests/my-cv/jobPilot >> /tmp/keepalive-db.log 2>&1') | crontab -
+
+# manual smoke test
+node /Users/william.jiang/my-tools/bin/keepalive-db.mjs
+```
 
 ## Architecture Overview
 

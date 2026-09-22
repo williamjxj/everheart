@@ -148,3 +148,37 @@ export function bundleForQuery(
     recalledEpisodes: episodes.map((r) => r.item.summary),
   };
 }
+
+/** Prefix used for user-set boundaries ("Boundary: don't call me ..."). */
+const BOUNDARY_PREFIX = /^\s*boundary\s*:/i;
+
+/** Facts the user explicitly asked to be respected — never dropped by ranking. */
+export function boundaryFacts(memory: CompanionMemory): string[] {
+  return memory.userProfile
+    .map((f) => f.text)
+    .filter((text) => BOUNDARY_PREFIX.test(text));
+}
+
+/**
+ * Facts to inject into the prompt for this turn: every user-set boundary first
+ * (highest priority, must never be crowded out by relevance ranking), then the
+ * recalled facts ordered by relevance. Deduplicated case-insensitively.
+ */
+export function factsForPrompt(
+  memory: CompanionMemory,
+  recalledFacts: string[] = [],
+  max = 10
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of [...boundaryFacts(memory), ...recalledFacts]) {
+    const text = String(raw || "").trim();
+    if (!text) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+    if (out.length >= max) break;
+  }
+  return out;
+}
